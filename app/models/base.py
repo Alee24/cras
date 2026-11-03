@@ -12,3 +12,4 @@ db = SQLAlchemy(model_class=Base)
 
 def utcnow():
     return datetime.now(timezone.utc)
+

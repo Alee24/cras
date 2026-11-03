@@ -73,3 +73,4 @@ def test_unassessed_obligations_fail_submission(app):
             ScoringEngine.calculate_assessment_scores(assessment, version)
 
         assert "unassessed obligation" in str(exc_info.value).lower()
+

@@ -967,3 +967,4 @@ def seed_statutory_calendar_rules(organization_id: int):
             db.session.add(deadline)
 
     db.session.commit()
+

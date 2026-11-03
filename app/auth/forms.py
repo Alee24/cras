@@ -108,3 +108,4 @@ class ProfileForm(FlaskForm):
     full_name = StringField("Full Name", validators=[DataRequired(), Length(min=2, max=100)])
     phone_number = StringField("Phone Number", validators=[DataRequired(), Length(min=9, max=20)])
     submit = SubmitField("Save Profile Changes")
+

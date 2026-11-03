@@ -126,3 +126,4 @@ def index():
         available_periods=available_periods,
         current_period=period_filter,
     )
+

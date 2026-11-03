@@ -149,3 +149,4 @@ For complete VPS instructions, consult [DEPLOYMENT.md](DEPLOYMENT.md).
 ## 8. Statutory Disclaimer
 
 The Compliance Risk Analytics System (CRAS) provides compliance monitoring, risk scoring, and decision support for SMEs in Kenya. It does not provide formal legal certification or guarantee statutory exemption from enforcement by the Kenya Revenue Authority (KRA), Office of the Data Protection Commissioner (ODPC), or Ministry of Labour.
+

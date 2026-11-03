@@ -69,3 +69,4 @@ def test_pdf_report_generation(app):
         assert excel_stream is not None
         excel_bytes = excel_stream.getvalue()
         assert len(excel_bytes) > 1000
+

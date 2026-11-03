@@ -37,3 +37,4 @@ def mark_all_read():
     db.session.commit()
     flash("All notifications marked as read.", "info")
     return redirect(url_for("notifications.index"))
+

@@ -153,3 +153,4 @@ def settings():
         lockout_attempts=lockout_attempts,
         lockout_minutes=lockout_minutes,
     )
+

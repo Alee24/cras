@@ -112,3 +112,4 @@ Where:
   - **Download Excel Workbook:** Multi-tab `.xlsx` report ready for board presentations or CFO review.
   - **Export CSV:** Raw tabular export for integration with business intelligence tools.
   - **Printable HTML:** Browser print-friendly layout.
+

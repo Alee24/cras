@@ -58,3 +58,4 @@ def test_tenant_data_isolation(app, client):
     resp = client.get(f"/assessments/{assessment_a_id}")
     # Must be 404 (or 403) due to organization-level tenant filter!
     assert resp.status_code in [404, 403]
+

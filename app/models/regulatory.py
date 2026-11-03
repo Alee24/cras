@@ -86,3 +86,4 @@ class ComplianceQuestion(db.Model):
 
     def __repr__(self):
         return f"<ComplianceQuestion {self.id} for req={self.requirement_id}>"
+

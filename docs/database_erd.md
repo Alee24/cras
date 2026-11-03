@@ -139,3 +139,4 @@ erDiagram
 - `status` (String 30: 'OPEN', 'ASSIGNED', 'IN_PROGRESS', 'PENDING_VERIFICATION', 'RESOLVED', 'CLOSED')
 - `due_date` (Date, Not Null)
 - `resolution_notes` (Text, Nullable)
+

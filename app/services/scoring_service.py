@@ -218,3 +218,4 @@ class ScoringEngine:
 
         db.session.commit()
         return result
+

@@ -16,3 +16,4 @@ Start-Process "http://localhost:5000"
 
 Write-Host "Starting CRAS web application..." -ForegroundColor Cyan
 .\.venv\Scripts\python wsgi.py
+

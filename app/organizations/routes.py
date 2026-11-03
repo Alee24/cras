@@ -78,3 +78,4 @@ def departments():
 
     departments_list = Department.query.filter_by(organization_id=org.id).all()
     return render_template("organizations/departments.html", org=org, departments=departments_list)
+

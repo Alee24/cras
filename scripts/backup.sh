@@ -19,3 +19,4 @@ else
   echo "Error: cras_postgres container is not running."
   exit 1
 fi
+

@@ -106,3 +106,4 @@ def toggle_status(membership_id):
     status_str = "activated" if target_user.is_active else "deactivated"
     flash(f"User {target_user.full_name} has been {status_str}.", "info")
     return redirect(url_for("users.index"))
+

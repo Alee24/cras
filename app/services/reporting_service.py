@@ -529,3 +529,4 @@ class ReportingService:
         wb.save(stream)
         stream.seek(0)
         return stream
+

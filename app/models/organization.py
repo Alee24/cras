@@ -74,3 +74,4 @@ class OrganizationUser(db.Model):
 
     def __repr__(self):
         return f"<OrganizationUser org={self.organization_id} user={self.user_id} role={self.role_id}>"
+

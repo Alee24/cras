@@ -93,3 +93,4 @@ class ScoringPolicyVersion(db.Model):
 
     def __repr__(self):
         return f"<ScoringPolicyVersion {self.version_number}>"
+

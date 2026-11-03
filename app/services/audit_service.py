@@ -47,3 +47,4 @@ class AuditService:
             db.session.rollback()
             # Avoid crashing request if audit logging fails
             print(f"[AUDIT LOG ERROR] Failed to record audit log: {e}")
+

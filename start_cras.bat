@@ -19,3 +19,4 @@ echo Starting CRAS local server on http://localhost:5000 ...
 start "" "http://localhost:5000"
 .\.venv\Scripts\python wsgi.py
 pause
+

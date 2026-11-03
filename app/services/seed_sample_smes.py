@@ -184,3 +184,4 @@ def seed_synthetic_smes():
 
     db.session.commit()
     print("Synthetic SME scenarios seeded successfully.")
+

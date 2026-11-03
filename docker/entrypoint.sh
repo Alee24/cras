@@ -21,3 +21,4 @@ print('CRAS schema initialized and statutory content verified.')
 
 echo "Executing entrypoint CMD: $@"
 exec "$@"
+

@@ -41,3 +41,4 @@ def requirement_detail(req_id):
     org = get_active_organization()
     req = RegulatoryRequirement.query.get_or_404(req_id)
     return render_template("regulatory/detail.html", org=org, req=req)
+

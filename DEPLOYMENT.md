@@ -130,3 +130,4 @@ git reset --hard HEAD~1 && \
 docker compose up -d --build && \
 ./scripts/restore.sh backups/latest_backup.sql.gz
 ```
+

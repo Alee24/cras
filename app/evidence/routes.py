@@ -150,3 +150,4 @@ def verify_evidence(evidence_id):
         flash(f"Evidence '{evidence.original_filename}' marked as {status}.", "success")
 
     return redirect(request.referrer or url_for("evidence.index"))
+

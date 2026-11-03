@@ -73,3 +73,4 @@ class ComplianceGapService:
 
         db.session.commit()
         return created_or_updated
+

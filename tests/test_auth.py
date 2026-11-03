@@ -99,3 +99,4 @@ def test_sme_registration_workflow(client, app):
         membership = OrganizationUser.query.filter_by(user_id=user.id, organization_id=org.id).first()
         assert membership is not None
         assert membership.role.name == Role.ORG_ADMIN
+

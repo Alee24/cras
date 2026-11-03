@@ -42,3 +42,4 @@ def session(app):
         transaction.rollback()
         connection.close()
         session.remove()
+

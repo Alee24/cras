@@ -223,3 +223,4 @@ def change_password():
         return redirect(url_for("auth.profile"))
 
     return render_template("auth/profile.html", form=form, password_form=password_form)
+

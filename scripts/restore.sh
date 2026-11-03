@@ -25,3 +25,4 @@ echo "Restoring from $BACKUP_FILE..."
 gunzip -c "$BACKUP_FILE" | docker exec -i cras_postgres psql -U cras_user -d cras_db
 
 echo "Restoration completed successfully."
+

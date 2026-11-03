@@ -118,3 +118,4 @@ class ComplianceDeadline(db.Model):
 
     def __repr__(self):
         return f"<ComplianceDeadline title={self.title} due={self.current_due_date}>"
+

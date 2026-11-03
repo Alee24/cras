@@ -66,3 +66,4 @@ def index():
         gap_stats=gap_stats,
         action_stats=action_stats,
     )
+

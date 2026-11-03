@@ -92,3 +92,4 @@ def update_status(gap_id):
         flash(f"Compliance Gap status updated to '{new_status}'.", "success")
 
     return redirect(url_for("compliance_gaps.view_gap", gap_id=gap.id))
+

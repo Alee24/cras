@@ -162,3 +162,4 @@ def update_action(action_id):
     AuditService.log("UPDATE_CORRECTIVE_ACTION", "CorrectiveAction", action.id, {"status": new_status}, organization_id=org.id)
     flash(f"Corrective action '{action.title}' updated successfully.", "success")
     return redirect(url_for("corrective_actions.view_action", action_id=action.id))
+

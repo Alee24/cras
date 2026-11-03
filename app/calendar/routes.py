@@ -127,3 +127,4 @@ def toggle_complete(deadline_id):
     db.session.commit()
     AuditService.log("TOGGLE_DEADLINE", "ComplianceDeadline", deadline.id, {"status": deadline.status}, organization_id=org.id)
     return redirect(url_for("calendar.index"))
+
