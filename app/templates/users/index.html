@@ -1,0 +1,142 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Users & Roles - {{ org.name }} - CRAS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h3 class="fw-bold mb-1 text-primary">Users & Access Control</h3>
+    <p class="text-muted small mb-0">Manage authorized personnel, assign role-based permissions, and departmental access.</p>
+  </div>
+  <button type="button" class="btn btn-primary btn-sm d-flex align-items-center gap-1 shadow-sm" data-bs-toggle="modal" data-bs-target="#addUserModal">
+    <i class="fa-solid fa-user-plus"></i> Add Team Member
+  </button>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-header bg-white py-3">
+    <h5 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-users me-2"></i>Organization Members ({{ memberships|length }})</h5>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-cras mb-0">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Role</th>
+            <th>Department</th>
+            <th>Phone</th>
+            <th>Account Status</th>
+            <th>Joined</th>
+            <th class="text-end">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in memberships %}
+          {% set u = m.user %}
+          <tr>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <div class="rounded-circle bg-primary-subtle text-primary fw-bold d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; font-size: 0.85rem;">
+                  {{ u.full_name[:1] }}
+                </div>
+                <div>
+                  <div class="fw-bold">{{ u.full_name }}</div>
+                  <div class="text-muted small">{{ u.email }}</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="badge bg-primary-subtle text-primary border border-primary-subtle">{{ m.role.display_name }}</span></td>
+            <td><span class="small">{{ m.department.name if m.department else 'General' }}</span></td>
+            <td><span class="small text-muted">{{ u.phone_number or '-' }}</span></td>
+            <td>
+              {% if u.is_active %}
+              <span class="badge bg-success-subtle text-success border border-success-subtle">Active</span>
+              {% else %}
+              <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Deactivated</span>
+              {% endif %}
+            </td>
+            <td><span class="small text-muted">{{ m.created_at.strftime('%d %b %Y') }}</span></td>
+            <td class="text-end">
+              {% if u.id != current_user.id %}
+              <form method="POST" action="{{ url_for('users.toggle_status', membership_id=m.id) }}" class="d-inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                {% if u.is_active %}
+                <button type="submit" class="btn btn-sm btn-outline-danger" title="Deactivate user">
+                  <i class="fa-solid fa-user-xmark"></i> Deactivate
+                </button>
+                {% else %}
+                <button type="submit" class="btn btn-sm btn-outline-success" title="Activate user">
+                  <i class="fa-solid fa-user-check"></i> Activate
+                </button>
+                {% endif %}
+              </form>
+              {% else %}
+              <span class="badge bg-light text-muted border">Current User</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Add User -->
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="{{ url_for('users.add_user') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold text-primary"><i class="fa-solid fa-user-plus me-2"></i>Add User to Organization</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Full Name</label>
+            <input type="text" name="full_name" class="form-control form-control-sm" placeholder="e.g. David Kiprono" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Work Email Address</label>
+            <input type="email" name="email" class="form-control form-control-sm" placeholder="e.g. d.kiprono@company.co.ke" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Phone Number</label>
+            <input type="text" name="phone_number" class="form-control form-control-sm" placeholder="+254 712 345 678">
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label small fw-semibold">Assigned Role</label>
+              <select name="role_id" class="form-select form-select-sm" required>
+                {% for r in roles %}
+                <option value="{{ r.id }}">{{ r.display_name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-semibold">Department</label>
+              <select name="department_id" class="form-select form-select-sm">
+                <option value="">-- None / General --</option>
+                {% for d in departments %}
+                <option value="{{ d.id }}">{{ d.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small fw-semibold">Initial Password</label>
+            <input type="text" name="password" class="form-control form-control-sm" value="CRAS@Kenya2026!">
+            <div class="form-text small" style="font-size: 0.72rem;">User can update password upon signing in.</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-primary">Add Member</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

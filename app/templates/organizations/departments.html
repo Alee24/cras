@@ -1,0 +1,84 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Departments - {{ org.name }} - CRAS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h3 class="fw-bold mb-1 text-primary">Department Management</h3>
+    <p class="text-muted small mb-0">Organize users and assign compliance responsibilities by functional business unit.</p>
+  </div>
+  <button type="button" class="btn btn-primary btn-sm d-flex align-items-center gap-1 shadow-sm" data-bs-toggle="modal" data-bs-target="#newDeptModal">
+    <i class="fa-solid fa-plus"></i> Add Department
+  </button>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-header bg-white py-3">
+    <h5 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-sitemap me-2"></i>Active Organizational Departments</h5>
+  </div>
+  <div class="card-body p-0">
+    {% if departments %}
+    <div class="table-responsive">
+      <table class="table table-cras mb-0">
+        <thead>
+          <tr>
+            <th>Department Name</th>
+            <th>Code</th>
+            <th>Description</th>
+            <th>Created</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for d in departments %}
+          <tr>
+            <td class="fw-bold">{{ d.name }}</td>
+            <td><span class="badge bg-light text-dark border font-monospace">{{ d.code or '-' }}</span></td>
+            <td class="text-muted small">{{ d.description or 'No description provided' }}</td>
+            <td class="text-muted small">{{ d.created_at.strftime('%d %b %Y') }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted small">
+      No departments defined.
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Modal: New Department -->
+<div class="modal fade" id="newDeptModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="{{ url_for('organizations.departments') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold text-primary"><i class="fa-solid fa-plus me-2"></i>Add Department</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Department Name</label>
+            <input type="text" name="name" class="form-control form-control-sm" placeholder="e.g. Legal & Corporate Affairs" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Department Code</label>
+            <input type="text" name="code" class="form-control form-control-sm" placeholder="e.g. LEGAL">
+          </div>
+          <div class="mb-2">
+            <label class="form-label small fw-semibold">Description</label>
+            <textarea name="description" class="form-control form-control-sm" rows="2" placeholder="Functional responsibilities..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-primary">Create Department</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

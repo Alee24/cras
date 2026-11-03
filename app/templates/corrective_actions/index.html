@@ -1,0 +1,128 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Corrective Actions - CRAS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h3 class="fw-bold mb-1 text-primary">Corrective Action Management</h3>
+    <p class="text-muted small mb-0">Assign, track, and verify remediation workflows across organizational departments.</p>
+  </div>
+  <a href="{{ url_for('corrective_actions.create') }}" class="btn btn-primary d-flex align-items-center gap-2 shadow-sm">
+    <i class="fa-solid fa-plus"></i> New Corrective Action
+  </a>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-4">
+    <div class="card p-3">
+      <div class="text-muted small text-uppercase fw-semibold">Total Actions</div>
+      <div class="fs-3 fw-bold text-primary">{{ total_actions }}</div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="card p-3">
+      <div class="text-muted small text-uppercase fw-semibold">Open / In Progress</div>
+      <div class="fs-3 fw-bold text-warning">{{ open_actions }}</div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="card p-3">
+      <div class="text-muted small text-uppercase fw-semibold">Resolved / Closed</div>
+      <div class="fs-3 fw-bold text-success">{{ resolved_actions }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+  <div class="card-body py-2">
+    <form method="GET" action="{{ url_for('corrective_actions.index') }}" class="row g-2 align-items-center">
+      <div class="col-md-4">
+        <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">All Statuses</option>
+          <option value="OPEN" {% if current_status == 'OPEN' %}selected{% endif %}>Open</option>
+          <option value="ASSIGNED" {% if current_status == 'ASSIGNED' %}selected{% endif %}>Assigned</option>
+          <option value="IN_PROGRESS" {% if current_status == 'IN_PROGRESS' %}selected{% endif %}>In Progress</option>
+          <option value="PENDING_VERIFICATION" {% if current_status == 'PENDING_VERIFICATION' %}selected{% endif %}>Pending Verification</option>
+          <option value="RESOLVED" {% if current_status == 'RESOLVED' %}selected{% endif %}>Resolved</option>
+          <option value="CLOSED" {% if current_status == 'CLOSED' %}selected{% endif %}>Closed</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <select name="priority" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">All Priorities</option>
+          <option value="CRITICAL" {% if current_priority == 'CRITICAL' %}selected{% endif %}>Critical</option>
+          <option value="HIGH" {% if current_priority == 'HIGH' %}selected{% endif %}>High</option>
+          <option value="MEDIUM" {% if current_priority == 'MEDIUM' %}selected{% endif %}>Medium</option>
+          <option value="LOW" {% if current_priority == 'LOW' %}selected{% endif %}>Low</option>
+        </select>
+      </div>
+      <div class="col-md-4 text-end">
+        <a href="{{ url_for('corrective_actions.index') }}" class="btn btn-sm btn-light border">Reset Filters</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Actions Table -->
+<div class="card shadow-sm">
+  <div class="card-body p-0">
+    {% if actions %}
+    <div class="table-responsive">
+      <table class="table table-cras mb-0">
+        <thead>
+          <tr>
+            <th>Action Item</th>
+            <th>Priority</th>
+            <th>Assigned To</th>
+            <th>Target Due Date</th>
+            <th>Status</th>
+            <th class="text-end">Manage</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in actions %}
+          <tr>
+            <td>
+              <div class="fw-bold">{{ a.title }}</div>
+              <div class="text-muted small text-truncate" style="max-width: 320px;">{{ a.action_description }}</div>
+            </td>
+            <td>
+              {% if a.priority == 'CRITICAL' %}
+              <span class="badge bg-danger">Critical</span>
+              {% elif a.priority == 'HIGH' %}
+              <span class="badge bg-warning text-dark">High</span>
+              {% else %}
+              <span class="badge bg-secondary">Medium</span>
+              {% endif %}
+            </td>
+            <td>{{ a.assigned_to.full_name if a.assigned_to else '<span class="text-muted">Unassigned</span>'|safe }}</td>
+            <td>
+              <span class="small fw-semibold">{{ a.due_date.strftime('%d %b %Y') }}</span>
+            </td>
+            <td>{{ a.status|status_badge }}</td>
+            <td class="text-end">
+              <a href="{{ url_for('corrective_actions.view_action', action_id=a.id) }}" class="btn btn-sm btn-outline-primary">
+                View & Update
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+      <i class="fa-solid fa-list-check fa-3x text-secondary mb-3"></i>
+      <h5>No Corrective Actions Listed</h5>
+      <p class="small mb-3">Create corrective actions to assign tasks and address non-compliant requirements.</p>
+      <a href="{{ url_for('corrective_actions.create') }}" class="btn btn-sm btn-primary">
+        <i class="fa-solid fa-plus me-1"></i>Create New Action
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

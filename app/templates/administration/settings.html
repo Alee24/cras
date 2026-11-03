@@ -1,0 +1,52 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}System Settings - Super Admin - CRAS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h3 class="fw-bold mb-1 text-primary">System & Security Settings</h3>
+    <p class="text-muted small mb-0">Platform security policies, authentication controls, and application configuration.</p>
+  </div>
+  <a href="{{ url_for('administration.index') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="fa-solid fa-arrow-left me-1"></i>Back to Admin Console
+  </a>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card shadow-sm">
+      <div class="card-header bg-white py-3">
+        <h5 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-gear me-2"></i>Global Platform Parameters</h5>
+      </div>
+      <div class="card-body p-4">
+        <form method="POST" action="{{ url_for('administration.settings') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Application Branding Name</label>
+            <input type="text" name="app_name" class="form-control form-control-sm" value="{{ app_name }}" required>
+          </div>
+
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Max Failed Login Attempts</label>
+              <input type="number" name="lockout_attempts" class="form-control form-control-sm" value="{{ lockout_attempts }}" min="3" max="10">
+              <div class="form-text small" style="font-size: 0.72rem;">Account is temporarily locked after consecutive failures.</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Lockout Duration (Minutes)</label>
+              <input type="number" name="lockout_minutes" class="form-control form-control-sm" value="{{ lockout_minutes }}" min="5" max="120">
+              <div class="form-text small" style="font-size: 0.72rem;">Automatic unlock duration.</div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-sm px-4 fw-semibold">
+            <i class="fa-solid fa-floppy-disk me-1"></i>Save System Settings
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

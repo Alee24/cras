@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}CRAS{% endblock %} | Compliance Risk Analytics System</title>
+  
+  <!-- Bootstrap 5.3 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- FontAwesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Chart.js 4 -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <!-- Custom CRAS CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cras.css') }}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+  <div class="app-wrapper">
+    <!-- Sidebar Navigation -->
+    <aside class="cras-sidebar" id="crasSidebar">
+      <div class="cras-brand">
+        <div class="logo-icon">C</div>
+        <div class="brand-text">
+          <div class="brand-title">CRAS</div>
+          <div class="brand-subtitle">Kenya SME Compliance</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <!-- OVERVIEW -->
+        <div class="sidebar-section-title">Overview</div>
+        <a href="{{ url_for('dashboard.index') }}" class="sidebar-nav-item {% if request.blueprint == 'dashboard' %}active{% endif %}">
+          <i class="fa-solid fa-gauge-high"></i> Dashboard
+        </a>
+
+        <!-- COMPLIANCE MANAGEMENT -->
+        <div class="sidebar-section-title">Compliance Management</div>
+        <a href="{{ url_for('assessments.list_assessments') }}" class="sidebar-nav-item {% if request.blueprint == 'assessments' %}active{% endif %}">
+          <i class="fa-solid fa-clipboard-check"></i> Assessments
+        </a>
+        <a href="{{ url_for('regulatory.framework') }}" class="sidebar-nav-item {% if request.blueprint == 'regulatory' %}active{% endif %}">
+          <i class="fa-solid fa-book-bookmark"></i> Regulatory Framework
+        </a>
+        <a href="{{ url_for('calendar.index') }}" class="sidebar-nav-item {% if request.blueprint == 'calendar' %}active{% endif %}">
+          <i class="fa-solid fa-calendar-days"></i> Compliance Calendar
+        </a>
+        <a href="{{ url_for('compliance_gaps.index') }}" class="sidebar-nav-item {% if request.blueprint == 'compliance_gaps' %}active{% endif %}">
+          <i class="fa-solid fa-triangle-exclamation"></i> Compliance Gaps
+        </a>
+        <a href="{{ url_for('corrective_actions.index') }}" class="sidebar-nav-item {% if request.blueprint == 'corrective_actions' %}active{% endif %}">
+          <i class="fa-solid fa-list-check"></i> Corrective Actions
+        </a>
+        <a href="{{ url_for('evidence.index') }}" class="sidebar-nav-item {% if request.blueprint == 'evidence' %}active{% endif %}">
+          <i class="fa-solid fa-folder-open"></i> Evidence Vault
+        </a>
+
+        <!-- ANALYTICS -->
+        <div class="sidebar-section-title">Analytics</div>
+        <a href="{{ url_for('analytics.index') }}" class="sidebar-nav-item {% if request.blueprint == 'analytics' %}active{% endif %}">
+          <i class="fa-solid fa-chart-line"></i> Risk Analytics & Trends
+        </a>
+
+        <!-- REPORTING -->
+        <div class="sidebar-section-title">Reporting</div>
+        <a href="{{ url_for('reports.index') }}" class="sidebar-nav-item {% if request.blueprint == 'reports' %}active{% endif %}">
+          <i class="fa-solid fa-file-pdf"></i> Compliance Reports
+        </a>
+
+        <!-- ORGANIZATION -->
+        <div class="sidebar-section-title">Organization</div>
+        <a href="{{ url_for('organizations.profile') }}" class="sidebar-nav-item {% if request.blueprint == 'organizations' and request.endpoint != 'organizations.departments' %}active{% endif %}">
+          <i class="fa-solid fa-building"></i> Company Profile
+        </a>
+        <a href="{{ url_for('organizations.departments') }}" class="sidebar-nav-item {% if request.endpoint == 'organizations.departments' %}active{% endif %}">
+          <i class="fa-solid fa-sitemap"></i> Departments
+        </a>
+        <a href="{{ url_for('users.index') }}" class="sidebar-nav-item {% if request.blueprint == 'users' %}active{% endif %}">
+          <i class="fa-solid fa-users"></i> Users & Roles
+        </a>
+
+        <!-- SYSTEM ADMINISTRATION (Super Admin Only) -->
+        {% if current_user.is_authenticated and current_user.is_super_admin %}
+        <div class="sidebar-section-title">System Administration</div>
+        <a href="{{ url_for('administration.index') }}" class="sidebar-nav-item {% if request.endpoint == 'administration.index' %}active{% endif %}">
+          <i class="fa-solid fa-shield-halved"></i> Admin Console
+        </a>
+        <a href="{{ url_for('administration.organizations') }}" class="sidebar-nav-item {% if request.endpoint == 'administration.organizations' %}active{% endif %}">
+          <i class="fa-solid fa-landmark"></i> Organizations
+        </a>
+        <a href="{{ url_for('administration.regulatory_content') }}" class="sidebar-nav-item {% if request.endpoint == 'administration.regulatory_content' %}active{% endif %}">
+          <i class="fa-solid fa-scale-balanced"></i> Regulatory Content
+        </a>
+        <a href="{{ url_for('administration.scoring_config') }}" class="sidebar-nav-item {% if request.endpoint == 'administration.scoring_config' %}active{% endif %}">
+          <i class="fa-solid fa-sliders"></i> Scoring Policy
+        </a>
+        <a href="{{ url_for('administration.audit_logs') }}" class="sidebar-nav-item {% if request.endpoint == 'administration.audit_logs' %}active{% endif %}">
+          <i class="fa-solid fa-clock-rotate-left"></i> System Audit Logs
+        </a>
+        <a href="{{ url_for('administration.settings') }}" class="sidebar-nav-item {% if request.endpoint == 'administration.settings' %}active{% endif %}">
+          <i class="fa-solid fa-gear"></i> System Settings
+        </a>
+        {% endif %}
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="app-main">
+      <!-- Top Navigation Bar -->
+      <header class="cras-topbar">
+        <div class="topbar-left">
+          <button class="btn btn-sm btn-outline-secondary d-lg-none" id="sidebarToggle" type="button">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+
+          <!-- Organization Selector Dropdown -->
+          {% if current_org %}
+          <div class="dropdown org-selector">
+            <button class="btn btn-sm btn-light border dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown">
+              <i class="fa-solid fa-building text-primary"></i>
+              <span class="text-truncate fw-semibold" style="max-width: 180px;">{{ current_org.name }}</span>
+            </button>
+            <ul class="dropdown-menu shadow-sm">
+              <li class="dropdown-header text-uppercase font-monospace" style="font-size: 0.7rem;">Active Organization</li>
+              {% for org in user_organizations %}
+              <li>
+                <a class="dropdown-item d-flex justify-content-between align-items-center {% if org.id == current_org.id %}active fw-bold{% endif %}" href="{{ url_for('auth.switch_org', org_id=org.id) }}">
+                  <span>{{ org.name }}</span>
+                  {% if org.id == current_org.id %}<i class="fa-solid fa-check small"></i>{% endif %}
+                </a>
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+        </div>
+
+        <div class="topbar-right">
+          <!-- Notification Bell -->
+          <a href="{{ url_for('notifications.index') }}" class="btn btn-light position-relative p-2 border rounded-circle">
+            <i class="fa-solid fa-bell text-secondary"></i>
+            {% if unread_notifications_count > 0 %}
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;">
+              {{ unread_notifications_count }}
+            </span>
+            {% endif %}
+          </a>
+
+          <!-- User Profile Dropdown -->
+          <div class="dropdown">
+            <button class="btn btn-light border dropdown-toggle d-flex align-items-center gap-2 py-1 px-2" type="button" data-bs-toggle="dropdown">
+              <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; font-size: 0.85rem;">
+                {{ current_user.full_name[:1] if current_user.is_authenticated else 'U' }}
+              </div>
+              <div class="text-start d-none d-md-block" style="line-height: 1.2;">
+                <div class="fw-semibold small">{{ current_user.full_name if current_user.is_authenticated else 'Guest' }}</div>
+                <div class="text-muted" style="font-size: 0.7rem;">{{ current_role_name }}</div>
+              </div>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+              <li><h6 class="dropdown-header">{{ current_user.email }}</h6></li>
+              <li><a class="dropdown-item" href="{{ url_for('auth.profile') }}"><i class="fa-solid fa-user-gear me-2 text-muted"></i> Account Profile</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('organizations.profile') }}"><i class="fa-solid fa-building me-2 text-muted"></i> Organization Profile</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}"><i class="fa-solid fa-right-from-bracket me-2"></i> Sign Out</a></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Page Content Container -->
+      <main class="p-4 flex-grow-1">
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+                <i class="fa-solid {% if category == 'success' %}fa-circle-check{% elif category == 'danger' %}fa-triangle-exclamation{% elif category == 'warning' %}fa-circle-exclamation{% else %}fa-circle-info{% endif %} me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+      </main>
+
+      <!-- Statutory Disclaimer Footer -->
+      <footer class="cras-legal-banner">
+        <div class="container-fluid px-0">
+          <div class="row align-items-center">
+            <div class="col-md-9">
+              <strong class="text-dark">Regulatory Decision-Support Notice:</strong>
+              The Compliance Risk Analytics System (CRAS) provides compliance intelligence, risk scoring, and monitoring support for Kenyan SMEs. It does not provide formal legal certification or guarantee statutory exemption from statutory regulatory authorities (ODPC, KRA, Ministry of Labour).
+            </div>
+            <div class="col-md-3 text-md-end mt-2 mt-md-0 font-monospace small">
+              &copy; 2026 CRAS Platform v1.0
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Bootstrap 5.3 Bundle JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Sidebar toggle for mobile
+    const toggleBtn = document.getElementById('sidebarToggle');
+    const sidebar = document.getElementById('crasSidebar');
+    if (toggleBtn && sidebar) {
+      toggleBtn.addEventListener('click', () => {
+        sidebar.classList.toggle('open');
+      });
+    }
+  </script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

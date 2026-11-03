@@ -1,0 +1,64 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: cras_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-cras_db}
+      POSTGRES_USER: ${POSTGRES_USER:-cras_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cras_secure_password_2026}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cras_user} -d ${POSTGRES_DB:-cras_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cras_network
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cras_web
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      FLASK_ENV: production
+      DEBUG: "False"
+      SECRET_KEY: ${SECRET_KEY:-change-this-in-production-to-a-very-secure-random-key}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-cras_user}:${POSTGRES_PASSWORD:-cras_secure_password_2026}@postgres:5432/${POSTGRES_DB:-cras_db}
+      UPLOAD_FOLDER: /app/uploads
+      INITIAL_ADMIN_EMAIL: ${INITIAL_ADMIN_EMAIL:-admin@cras.ke}
+      INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD:-Admin@CRAS2026!}
+      INITIAL_ADMIN_NAME: ${INITIAL_ADMIN_NAME:-System Administrator}
+    volumes:
+      - uploads_data:/app/uploads
+    networks:
+      - cras_network
+
+  nginx:
+    image: nginx:alpine
+    container_name: cras_nginx
+    restart: always
+    depends_on:
+      - web
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./app/static:/app/static:ro
+    networks:
+      - cras_network
+
+networks:
+  cras_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  uploads_data:

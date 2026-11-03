@@ -1,0 +1,108 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Action Task: {{ action.title }} - CRAS{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <a href="{{ url_for('corrective_actions.index') }}" class="text-decoration-none small text-muted">
+        <i class="fa-solid fa-arrow-left me-1"></i>Back to Corrective Actions
+      </a>
+      <h3 class="fw-bold text-primary mt-1 mb-0">{{ action.title }}</h3>
+    </div>
+    <div class="d-flex gap-2 align-items-center">
+      {{ action.status|status_badge }}
+      <span class="badge bg-danger">{{ action.priority }} Priority</span>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-white py-3">
+        <h5 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-clipboard-list me-2"></i>Action Instructions & Background</h5>
+      </div>
+      <div class="card-body">
+        <div class="mb-3">
+          <label class="form-label text-muted small fw-semibold text-uppercase">Description</label>
+          <div class="p-3 bg-light rounded border text-dark small" style="white-space: pre-wrap;">{{ action.action_description }}</div>
+        </div>
+
+        {% if action.gap %}
+        <div class="mb-3">
+          <label class="form-label text-muted small fw-semibold text-uppercase">Associated Compliance Gap</label>
+          <div class="p-3 bg-warning-subtle rounded border border-warning-subtle small">
+            <strong>{{ action.gap.gap_title }}</strong><br/>
+            <span class="text-muted">Statutory Citation: {{ action.gap.legal_reference }}</span><br/>
+            <a href="{{ url_for('compliance_gaps.view_gap', gap_id=action.gap.id) }}" class="small fw-semibold mt-1 d-inline-block">View Gap Details &rarr;</a>
+          </div>
+        </div>
+        {% endif %}
+
+        {% if action.resolution_notes %}
+        <div class="mb-3">
+          <label class="form-label text-muted small fw-semibold text-uppercase">Resolution & Remediation Notes</label>
+          <div class="p-3 bg-success-subtle text-success rounded border border-success-subtle small">
+            {{ action.resolution_notes }}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-white py-3">
+        <h5 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-sliders me-2"></i>Update Task Status</h5>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('corrective_actions.update_action', action_id=action.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Task Status</label>
+            <select name="status" class="form-select form-select-sm">
+              <option value="OPEN" {% if action.status == 'OPEN' %}selected{% endif %}>Open</option>
+              <option value="ASSIGNED" {% if action.status == 'ASSIGNED' %}selected{% endif %}>Assigned</option>
+              <option value="IN_PROGRESS" {% if action.status == 'IN_PROGRESS' %}selected{% endif %}>In Progress</option>
+              <option value="PENDING_VERIFICATION" {% if action.status == 'PENDING_VERIFICATION' %}selected{% endif %}>Pending Verification</option>
+              <option value="RESOLVED" {% if action.status == 'RESOLVED' %}selected{% endif %}>Resolved</option>
+              <option value="CLOSED" {% if action.status == 'CLOSED' %}selected{% endif %}>Closed</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Assignee</label>
+            <select name="assigned_to_id" class="form-select form-select-sm">
+              <option value="">-- Unassigned --</option>
+              {% for u in org_users %}
+              <option value="{{ u.id }}" {% if action.assigned_to_id == u.id %}selected{% endif %}>
+                {{ u.full_name }} ({{ u.email }})
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Remediation / Resolution Notes</label>
+            <textarea name="resolution_notes" class="form-control form-control-sm" rows="3" placeholder="Explain what technical or procedural changes were implemented to remediate this item...">{{ action.resolution_notes or '' }}</textarea>
+          </div>
+
+          <div class="p-2 bg-light rounded border mb-3 small">
+            <div><strong>Due Date:</strong> {{ action.due_date.strftime('%d %b %Y') }}</div>
+            <div><strong>Created By:</strong> {{ action.created_by.full_name }}</div>
+            <div><strong>Created At:</strong> {{ action.created_at.strftime('%d %b %Y') }}</div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-sm w-100">
+            <i class="fa-solid fa-floppy-disk me-1"></i>Save Task Updates
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

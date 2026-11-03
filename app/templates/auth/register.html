@@ -1,0 +1,110 @@
+{% extends "layouts/auth.html" %}
+
+{% block title %}Register SME Organization - CRAS{% endblock %}
+{% block auth_card_max_width %}720px{% endblock %}
+
+{% block content %}
+<div class="mb-4 text-start">
+  <h4 class="fw-bold text-dark mb-1">Register SME Organization</h4>
+  <p class="text-muted small">Establish your compliance profile and initiate statutory regulatory monitoring in Kenya.</p>
+</div>
+
+<form method="POST" action="{{ url_for('auth.register') }}">
+  {{ form.hidden_tag() }}
+
+  <!-- Section 1: Administrator Information -->
+  <div class="p-3 bg-light rounded-3 mb-3 border">
+    <h6 class="fw-bold text-primary mb-3"><i class="fa-solid fa-user-shield me-2"></i>Organization Administrator</h6>
+    <div class="row g-2">
+      <div class="col-md-6 mb-2">
+        <label class="form-label small fw-semibold">Full Name</label>
+        {{ form.full_name(class="form-control form-control-sm" + (" is-invalid" if form.full_name.errors else ""), placeholder="e.g. Jane Wanjiku") }}
+        {% for error in form.full_name.errors %}<div class="invalid-feedback small">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="col-md-6 mb-2">
+        <label class="form-label small fw-semibold">Work Email Address</label>
+        {{ form.email(class="form-control form-control-sm" + (" is-invalid" if form.email.errors else ""), placeholder="j.wanjiku@company.co.ke") }}
+        {% for error in form.email.errors %}<div class="invalid-feedback small">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="col-md-6 mb-2">
+        <label class="form-label small fw-semibold">Phone Number</label>
+        {{ form.phone_number(class="form-control form-control-sm" + (" is-invalid" if form.phone_number.errors else ""), placeholder="+254 712 345 678") }}
+        {% for error in form.phone_number.errors %}<div class="invalid-feedback small">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="col-md-6 mb-2">
+        <label class="form-label small fw-semibold">County of Business</label>
+        {{ form.county(class="form-select form-select-sm") }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: Organization Profile -->
+  <div class="p-3 bg-light rounded-3 mb-3 border">
+    <h6 class="fw-bold text-primary mb-3"><i class="fa-solid fa-building me-2"></i>Organization Details</h6>
+    <div class="row g-2">
+      <div class="col-md-12 mb-2">
+        <label class="form-label small fw-semibold">Registered Company / Business Name</label>
+        {{ form.organization_name(class="form-control form-control-sm" + (" is-invalid" if form.organization_name.errors else ""), placeholder="e.g. Apex Logistics Solutions Ltd") }}
+        {% for error in form.organization_name.errors %}<div class="invalid-feedback small">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="col-md-6 mb-2">
+        <label class="form-label small fw-semibold">Business Registration No.</label>
+        {{ form.business_registration_number(class="form-control form-control-sm" + (" is-invalid" if form.business_registration_number.errors else ""), placeholder="e.g. CPR/2021/10492") }}
+        {% for error in form.business_registration_number.errors %}<div class="invalid-feedback small">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="col-md-6 mb-2">
+        <label class="form-label small fw-semibold">KRA PIN</label>
+        {{ form.kra_pin(class="form-control form-control-sm" + (" is-invalid" if form.kra_pin.errors else ""), placeholder="e.g. P051234567Z") }}
+        {% for error in form.kra_pin.errors %}<div class="invalid-feedback small">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="col-md-4 mb-2">
+        <label class="form-label small fw-semibold">Industry Sector</label>
+        {{ form.industry_sector(class="form-select form-select-sm") }}
+      </div>
+      <div class="col-md-4 mb-2">
+        <label class="form-label small fw-semibold">Entity Type</label>
+        {{ form.business_type(class="form-select form-select-sm") }}
+      </div>
+      <div class="col-md-4 mb-2">
+        <label class="form-label small fw-semibold">Total Employees</label>
+        {{ form.employee_count(class="form-control form-control-sm" + (" is-invalid" if form.employee_count.errors else "")) }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: Password & Security -->
+  <div class="p-3 bg-light rounded-3 mb-3 border">
+    <h6 class="fw-bold text-primary mb-3"><i class="fa-solid fa-lock me-2"></i>Account Security</h6>
+    <div class="row g-2">
+      <div class="col-md-6 mb-2">
+        <label class="form-label small fw-semibold">Password</label>
+        {{ form.password(class="form-control form-control-sm" + (" is-invalid" if form.password.errors else ""), placeholder="Minimum 8 characters") }}
+        {% for error in form.password.errors %}<div class="invalid-feedback small">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="col-md-6 mb-2">
+        <label class="form-label small fw-semibold">Confirm Password</label>
+        {{ form.confirm_password(class="form-control form-control-sm" + (" is-invalid" if form.confirm_password.errors else ""), placeholder="Re-enter password") }}
+        {% for error in form.confirm_password.errors %}<div class="invalid-feedback small">{{ error }}</div>{% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="mb-3 form-check">
+    {{ form.terms_agreed(class="form-check-input" + (" is-invalid" if form.terms_agreed.errors else "")) }}
+    <label class="form-check-label small text-muted" for="terms_agreed">
+      {{ form.terms_agreed.label.text }}
+    </label>
+    {% for error in form.terms_agreed.errors %}<div class="invalid-feedback small">{{ error }}</div>{% endfor %}
+  </div>
+
+  <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+    <i class="fa-solid fa-building-circle-check me-2"></i>Complete Registration & Launch CRAS
+  </button>
+</form>
+
+<div class="mt-4 text-center">
+  <p class="small text-muted mb-0">
+    Already registered? <a href="{{ url_for('auth.login') }}" class="fw-semibold text-primary text-decoration-none">Sign in to your account</a>
+  </p>
+</div>
+{% endblock %}

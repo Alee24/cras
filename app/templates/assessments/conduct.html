@@ -1,0 +1,267 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Conduct Assessment - {{ assessment.title }} - CRAS{% endblock %}
+
+{% block extra_css %}
+<style>
+  .obligation-card {
+    border-left: 4px solid #CBD5E1;
+    transition: all 0.2s ease;
+  }
+  .obligation-card:hover {
+    border-left-color: #2563EB;
+  }
+  .obligation-card.has-compliant {
+    border-left-color: #16A34A;
+  }
+  .obligation-card.has-partial {
+    border-left-color: #F59E0B;
+  }
+  .obligation-card.has-non-compliant {
+    border-left-color: #DC2626;
+  }
+  .sticky-action-bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 900;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    border-top: 1px solid var(--cras-border);
+    padding: 1rem 2rem;
+    box-shadow: 0 -4px 10px rgba(0,0,0,0.05);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <span class="badge bg-secondary mb-1">Assessment In Progress (Draft)</span>
+      <h3 class="fw-bold text-primary mb-1">{{ assessment.title }}</h3>
+      <p class="text-muted small mb-0">
+        <span class="fw-semibold">{{ org.name }}</span> &bull; Period: {{ assessment.assessment_period }} &bull; Date: {{ assessment.assessment_date.strftime('%d %b %Y') }}
+      </p>
+    </div>
+    <div>
+      <a href="{{ url_for('assessments.list_assessments') }}" class="btn btn-sm btn-outline-secondary">
+        <i class="fa-solid fa-arrow-left me-1"></i>Back to Assessments
+      </a>
+    </div>
+  </div>
+</div>
+
+<form method="POST" id="assessmentForm" action="{{ url_for('assessments.conduct_assessment', assessment_id=assessment.id) }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+  <!-- Nav Tabs for Domains -->
+  <ul class="nav nav-pills mb-4 bg-white p-2 rounded-3 border shadow-sm" id="domainTabs" role="tablist">
+    {% for domain in domains %}
+    <li class="nav-item" role="presentation">
+      <button class="nav-link fw-semibold px-4 {% if loop.first %}active{% endif %}" id="tab-{{ domain.code }}" data-bs-toggle="pill" data-bs-target="#content-{{ domain.code }}" type="button" role="tab">
+        <i class="fa-solid {{ domain.icon }} me-2"></i>{{ domain.title }}
+      </button>
+    </li>
+    {% endfor %}
+  </ul>
+
+  <!-- Tab Content -->
+  <div class="tab-content" id="domainTabsContent">
+    {% for domain in domains %}
+    <div class="tab-pane fade {% if loop.first %}show active{% endif %}" id="content-{{ domain.code }}" role="tabpanel">
+      
+      <!-- Domain Header Banner -->
+      <div class="card bg-light border mb-4">
+        <div class="card-body py-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h5 class="fw-bold mb-1 text-primary">{{ domain.title }}</h5>
+              <div class="text-muted small"><strong>Statutory Framework:</strong> {{ domain.legal_framework }}</div>
+            </div>
+            <div class="text-end">
+              <span class="badge bg-primary px-3 py-2">Domain Weight: 35%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Categories in Domain -->
+      {% for cat in domain.categories %}
+      <div class="mb-4">
+        <h6 class="fw-bold text-uppercase text-muted border-bottom pb-2 mb-3" style="font-size: 0.8rem; letter-spacing: 0.5px;">
+          <i class="fa-solid fa-folder-tree me-1 text-primary"></i>{{ cat.title }}
+        </h6>
+
+        <!-- Obligations in Category -->
+        {% for req in cat.requirements %}
+        {% set resp = responses.get(req.id) %}
+        {% set current_val = resp.response_value if resp else 'NOT_ASSESSED' %}
+        
+        <div class="card obligation-card mb-3 shadow-sm {% if current_val == 'COMPLIANT' %}has-compliant{% elif current_val == 'PARTIALLY_COMPLIANT' %}has-partial{% elif current_val == 'NON_COMPLIANT' %}has-non-compliant{% endif %}">
+          <div class="card-body p-3 p-md-4">
+            
+            <!-- Requirement Top Bar -->
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div>
+                <span class="badge bg-light text-dark border font-monospace me-2">{{ req.code }}</span>
+                <span class="fw-bold fs-6 text-dark">{{ req.title }}</span>
+              </div>
+              <div class="d-flex gap-1 align-items-center">
+                {% if req.risk_weight >= 3.0 %}
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Critical (3.0x)</span>
+                {% elif req.risk_weight >= 2.0 %}
+                <span class="badge bg-warning-subtle text-warning border border-warning-subtle">High (2.0x)</span>
+                {% else %}
+                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Standard (1.0x)</span>
+                {% endif %}
+                <span class="badge bg-success-subtle text-success small"><i class="fa-solid fa-check-double me-1"></i>Verified</span>
+              </div>
+            </div>
+
+            <!-- Legal Citation & Plain Description -->
+            <div class="mb-3 small">
+              <div class="text-primary fw-semibold mb-1">
+                <i class="fa-solid fa-scale-balanced me-1"></i>Legal Citation: {{ req.legal_reference }}
+              </div>
+              <div class="text-muted">{{ req.plain_description }}</div>
+            </div>
+
+            <!-- Assessment Question Box -->
+            {% for q in req.questions %}
+            <div class="p-3 bg-light rounded-3 border mb-3">
+              <label class="form-label fw-bold small text-dark mb-1">
+                <i class="fa-solid fa-circle-question me-1 text-primary"></i>Assessment Question:
+              </label>
+              <div class="small fw-semibold text-primary-dark mb-2">{{ q.question_text }}</div>
+              {% if q.help_text %}
+              <div class="text-muted" style="font-size: 0.75rem;"><i class="fa-solid fa-lightbulb text-warning me-1"></i>Guidance: {{ q.help_text }}</div>
+              {% endif %}
+
+              <!-- Radio Response Options -->
+              <div class="row g-2 mt-2">
+                <div class="col-sm-6 col-md-3">
+                  <div class="form-check p-2 border rounded bg-white">
+                    <input class="form-check-input ms-0 me-2" type="radio" name="response_{{ req.id }}" id="resp_{{ req.id }}_comp" value="COMPLIANT" {% if current_val == 'COMPLIANT' %}checked{% endif %}>
+                    <label class="form-check-label small fw-semibold text-success" for="resp_{{ req.id }}_comp">
+                      <i class="fa-solid fa-circle-check me-1"></i>Compliant (100%)
+                    </label>
+                  </div>
+                </div>
+
+                <div class="col-sm-6 col-md-3">
+                  <div class="form-check p-2 border rounded bg-white">
+                    <input class="form-check-input ms-0 me-2" type="radio" name="response_{{ req.id }}" id="resp_{{ req.id }}_part" value="PARTIALLY_COMPLIANT" {% if current_val == 'PARTIALLY_COMPLIANT' %}checked{% endif %}>
+                    <label class="form-check-label small fw-semibold text-warning" for="resp_{{ req.id }}_part">
+                      <i class="fa-solid fa-circle-half-stroke me-1"></i>Partial (50%)
+                    </label>
+                  </div>
+                </div>
+
+                <div class="col-sm-6 col-md-3">
+                  <div class="form-check p-2 border rounded bg-white">
+                    <input class="form-check-input ms-0 me-2" type="radio" name="response_{{ req.id }}" id="resp_{{ req.id }}_non" value="NON_COMPLIANT" {% if current_val == 'NON_COMPLIANT' %}checked{% endif %}>
+                    <label class="form-check-label small fw-semibold text-danger" for="resp_{{ req.id }}_non">
+                      <i class="fa-solid fa-circle-xmark me-1"></i>Non-Compliant (0%)
+                    </label>
+                  </div>
+                </div>
+
+                <div class="col-sm-6 col-md-3">
+                  <div class="form-check p-2 border rounded bg-white">
+                    <input class="form-check-input ms-0 me-2" type="radio" name="response_{{ req.id }}" id="resp_{{ req.id }}_na" value="NOT_APPLICABLE" {% if current_val == 'NOT_APPLICABLE' %}checked{% endif %}>
+                    <label class="form-check-label small fw-semibold text-secondary" for="resp_{{ req.id }}_na">
+                      <i class="fa-solid fa-ban me-1"></i>Not Applicable
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+
+            <!-- Assessor Notes & Evidence Hint -->
+            <div class="row g-2">
+              <div class="col-md-9">
+                <input type="text" name="notes_{{ req.id }}" class="form-control form-control-sm" placeholder="Assessor observations, verification notes, or audit trail references..." value="{{ resp.notes if resp and resp.notes else '' }}">
+              </div>
+              <div class="col-md-3 text-end">
+                <button type="button" class="btn btn-sm btn-outline-secondary w-100" data-bs-toggle="modal" data-bs-target="#evidenceModal_{{ req.id }}">
+                  <i class="fa-solid fa-paperclip me-1"></i>Evidence Document
+                </button>
+              </div>
+            </div>
+
+            <!-- Statutory Consequence Warning if non-compliant -->
+            {% if req.potential_consequence %}
+            <div class="mt-2 text-muted" style="font-size: 0.72rem;">
+              <span class="text-danger fw-semibold"><i class="fa-solid fa-shield-virus me-1"></i>Statutory Exposure:</span> {{ req.potential_consequence }}
+            </div>
+            {% endif %}
+
+          </div>
+        </div>
+
+        <!-- Evidence Upload Modal for this Requirement -->
+        <div class="modal fade" id="evidenceModal_{{ req.id }}" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h6 class="modal-title fw-bold"><i class="fa-solid fa-paperclip me-2 text-primary"></i>Upload Evidence for {{ req.code }}</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <p class="small text-muted mb-2"><strong>Required Evidence:</strong> {{ req.required_evidence_desc or 'Upload official certificate, policy document, or payment PRN receipt.' }}</p>
+                <div class="mb-3">
+                  <label class="form-label small fw-semibold">Select File (PDF, DOCX, XLSX, JPG, PNG - Max 16MB)</label>
+                  <input type="file" name="evidence_file_{{ req.id }}" class="form-control form-control-sm" form="directUpload_{{ req.id }}">
+                </div>
+                <div class="mb-2">
+                  <label class="form-label small fw-semibold">Document Notes</label>
+                  <input type="text" name="description" class="form-control form-control-sm" placeholder="e.g. Valid 2026 KRA PIN Certificate" form="directUpload_{{ req.id }}">
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="submit" form="directUpload_{{ req.id }}" class="btn btn-sm btn-primary">Upload & Attach</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Sticky Bottom Actions Bar -->
+  <div class="sticky-action-bar d-flex justify-content-between align-items-center">
+    <div class="d-none d-md-block text-muted small">
+      <i class="fa-solid fa-info-circle me-1 text-primary"></i>
+      Draft responses are saved when you click <strong>Save Draft</strong>. Click <strong>Finalize & Calculate Score</strong> once all items are completed.
+    </div>
+    <div class="d-flex gap-2">
+      <button type="submit" name="action" value="save_draft" class="btn btn-outline-secondary px-4 fw-semibold">
+        <i class="fa-solid fa-floppy-disk me-2"></i>Save Draft
+      </button>
+      <button type="submit" name="action" value="finalize" class="btn btn-primary px-4 fw-semibold shadow-sm">
+        <i class="fa-solid fa-calculator me-2"></i>Finalize & Calculate Score
+      </button>
+    </div>
+  </div>
+</form>
+
+<!-- Separate Hidden Forms for Direct Evidence Upload Modals -->
+{% for domain in domains %}
+  {% for cat in domain.categories %}
+    {% for req in cat.requirements %}
+    <form id="directUpload_{{ req.id }}" method="POST" action="{{ url_for('evidence.upload_file') }}" enctype="multipart/form-data" style="display:none;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <input type="hidden" name="assessment_id" value="{{ assessment.id }}"/>
+      <input type="hidden" name="requirement_id" value="{{ req.id }}"/>
+    </form>
+    {% endfor %}
+  {% endfor %}
+{% endfor %}
+
+{% endblock %}

@@ -1,0 +1,99 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}System Administration Console - CRAS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h3 class="fw-bold mb-1 text-primary">System Administration Console</h3>
+    <p class="text-muted small mb-0">Platform governance, regulatory framework oversight, and system-wide audit controls.</p>
+  </div>
+  <span class="badge bg-danger fs-6 px-3 py-2">
+    <i class="fa-solid fa-lock me-1"></i>Super Administrator Portal
+  </span>
+</div>
+
+<!-- Platform KPI Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-md-3">
+    <div class="card p-3 shadow-sm">
+      <div class="text-muted small text-uppercase fw-semibold">Registered SMEs</div>
+      <div class="fs-3 fw-bold text-primary">{{ total_orgs }}</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-md-3">
+    <div class="card p-3 shadow-sm">
+      <div class="text-muted small text-uppercase fw-semibold">System Users</div>
+      <div class="fs-3 fw-bold text-primary">{{ total_users }}</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-md-3">
+    <div class="card p-3 shadow-sm">
+      <div class="text-muted small text-uppercase fw-semibold">Statutory Requirements</div>
+      <div class="fs-3 fw-bold text-success">{{ total_requirements }}</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-md-3">
+    <div class="card p-3 shadow-sm">
+      <div class="text-muted small text-uppercase fw-semibold">Audit Events Logged</div>
+      <div class="fs-3 fw-bold text-secondary">{{ total_audit_logs }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <!-- Registered Organizations -->
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h5 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-landmark me-2"></i>Recent Organizations</h5>
+        <a href="{{ url_for('administration.organizations') }}" class="btn btn-sm btn-outline-primary">View All</a>
+      </div>
+      <div class="card-body p-0">
+        <div class="list-group list-group-flush">
+          {% for o in orgs %}
+          <div class="list-group-item d-flex justify-content-between align-items-center py-2 px-3 small">
+            <div>
+              <div class="fw-bold">{{ o.name }}</div>
+              <div class="text-muted">KRA PIN: {{ o.kra_pin }} &bull; Sector: {{ o.industry_sector }}</div>
+            </div>
+            <div>
+              {% if o.is_active %}
+              <span class="badge bg-success-subtle text-success">Active</span>
+              {% else %}
+              <span class="badge bg-danger-subtle text-danger">Inactive</span>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Audit Logs -->
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h5 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-clock-rotate-left me-2"></i>Recent Security Audit Events</h5>
+        <a href="{{ url_for('administration.audit_logs') }}" class="btn btn-sm btn-outline-primary">All Logs</a>
+      </div>
+      <div class="card-body p-0">
+        <div class="list-group list-group-flush">
+          {% for l in recent_logs %}
+          <div class="list-group-item py-2 px-3 small">
+            <div class="d-flex justify-content-between">
+              <span class="badge bg-light text-dark border font-monospace">{{ l.action }}</span>
+              <span class="text-muted" style="font-size: 0.72rem;">{{ l.created_at.strftime('%d %b %H:%M') }}</span>
+            </div>
+            <div class="text-muted mt-1" style="font-size: 0.75rem;">
+              User: {{ l.user.email if l.user else 'System' }} | Entity: {{ l.entity_type }} ({{ l.entity_id or '-' }})
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Initiate Compliance Assessment - CRAS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card shadow-sm">
+      <div class="card-header bg-white py-3">
+        <h4 class="fw-bold mb-1 text-primary"><i class="fa-solid fa-clipboard-check me-2"></i>Initiate Compliance Assessment</h4>
+        <p class="text-muted small mb-0">Set up an assessment cycle for {{ org.name }}. All statutory requirements under Kenya Data Protection, Tax, and Labour laws will be loaded automatically.</p>
+      </div>
+      <div class="card-body p-4">
+        <form method="POST" action="{{ url_for('assessments.create_assessment') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Assessment Title</label>
+            <input type="text" name="title" class="form-control" placeholder="e.g. 2026 Q1 Statutory Compliance Assessment" required>
+            <div class="form-text small">Give this assessment a descriptive name (e.g. quarterly audit, annual review).</div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Assessment Period</label>
+              <select name="assessment_period" class="form-select" required>
+                <option value="2026 Q1" selected>2026 Q1 (Jan - Mar 2026)</option>
+                <option value="2026 Q2">2026 Q2 (Apr - Jun 2026)</option>
+                <option value="2026 Q3">2026 Q3 (Jul - Sep 2026)</option>
+                <option value="2026 Q4">2026 Q4 (Oct - Dec 2026)</option>
+                <option value="Annual 2026">Annual 2026 Review</option>
+                <option value="Initial Baseline 2026">Initial Baseline 2026</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Assessment Date</label>
+              <input type="date" name="assessment_date" class="form-control" value="{{ current_date or '2026-03-31' }}" required>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Scope & Background Notes</label>
+            <textarea name="notes" class="form-control" rows="3" placeholder="Optional notes regarding the scope of assessment, participating team members, or specific operational units."></textarea>
+          </div>
+
+          <div class="alert alert-info small d-flex align-items-center gap-2 mb-4">
+            <i class="fa-solid fa-circle-info fa-lg"></i>
+            <div>
+              <strong>Scoring Policy:</strong> This assessment will be evaluated against the <em>Kenya SME Standard Policy (v1.0)</em> with verified statutory weights: Data Protection (35%), Tax Compliance (35%), and Labour Laws (30%).
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center">
+            <a href="{{ url_for('assessments.list_assessments') }}" class="btn btn-outline-secondary">
+              <i class="fa-solid fa-arrow-left me-1"></i>Cancel
+            </a>
+            <button type="submit" class="btn btn-primary px-4 fw-semibold">
+              <i class="fa-solid fa-check me-2"></i>Launch Assessment Questionnaire
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

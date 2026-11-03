@@ -1,0 +1,101 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Regulatory Framework - Kenya SME Compliance - CRAS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h3 class="fw-bold mb-1 text-primary">Regulatory Compliance Framework</h3>
+    <p class="text-muted small mb-0">Statutory obligations reference catalog for Small and Medium Enterprises in Kenya.</p>
+  </div>
+  <span class="badge bg-primary fs-6 px-3 py-2">
+    {{ total_requirements }} Active Statutory Obligations
+  </span>
+</div>
+
+<!-- Domain Selection Buttons -->
+<div class="d-flex gap-2 mb-4 overflow-auto pb-2">
+  {% for d in domains %}
+  <a href="{{ url_for('regulatory.framework', domain=d.code) }}" class="btn btn-sm {% if selected_domain and selected_domain.code == d.code %}btn-primary fw-bold shadow-sm{% else %}btn-light border{% endif %} px-4 py-2 text-nowrap">
+    <i class="fa-solid {{ d.icon }} me-2"></i>{{ d.title }}
+  </a>
+  {% endfor %}
+</div>
+
+{% if selected_domain %}
+<div class="card mb-4 border shadow-sm">
+  <div class="card-body p-4">
+    <div class="d-flex justify-content-between align-items-start">
+      <div>
+        <h4 class="fw-bold text-primary mb-1">{{ selected_domain.title }}</h4>
+        <p class="text-muted small mb-2">{{ selected_domain.description }}</p>
+        <div class="badge bg-light text-primary border small font-monospace">
+          <i class="fa-solid fa-scale-balanced me-1"></i>{{ selected_domain.legal_framework }}
+        </div>
+      </div>
+      <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">
+        <i class="fa-solid fa-check-double me-1"></i>Verified Kenya Statutory Data
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- Categories & Obligations List -->
+{% for cat in categories %}
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-white py-3">
+    <h5 class="fw-bold mb-0 text-dark">
+      <i class="fa-solid fa-folder-open me-2 text-primary"></i>{{ cat.title }}
+      <span class="badge bg-light text-muted border ms-2 small">{{ cat.requirements|length }} obligations</span>
+    </h5>
+    {% if cat.description %}
+    <p class="text-muted small mb-0 mt-1">{{ cat.description }}</p>
+    {% endif %}
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-cras mb-0">
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Requirement Title</th>
+            <th>Statutory Citation</th>
+            <th>Applicability Rule</th>
+            <th>Weight</th>
+            <th class="text-end">Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for req in cat.requirements %}
+          <tr>
+            <td><span class="badge bg-light text-dark border font-monospace">{{ req.code }}</span></td>
+            <td>
+              <div class="fw-bold">{{ req.title }}</div>
+              <div class="text-muted small text-truncate" style="max-width: 320px;">{{ req.plain_description }}</div>
+            </td>
+            <td><span class="small font-monospace text-primary">{{ req.legal_reference }}</span></td>
+            <td><span class="small text-muted">{{ req.applicability_rule }}</span></td>
+            <td>
+              {% if req.risk_weight >= 3.0 %}
+              <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Critical (3.0x)</span>
+              {% elif req.risk_weight >= 2.0 %}
+              <span class="badge bg-warning-subtle text-warning border border-warning-subtle">High (2.0x)</span>
+              {% else %}
+              <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Standard (1.0x)</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <a href="{{ url_for('regulatory.requirement_detail', req_id=req.id) }}" class="btn btn-sm btn-outline-primary">
+                View
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+{% endblock %}

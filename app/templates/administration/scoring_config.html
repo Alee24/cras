@@ -1,0 +1,112 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Risk Scoring Configuration - Super Admin - CRAS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h3 class="fw-bold mb-1 text-primary">Risk Scoring Configuration</h3>
+    <p class="text-muted small mb-0">Configure regulatory domain weights, response mapping, and RAG risk classification boundaries.</p>
+  </div>
+  <a href="{{ url_for('administration.index') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="fa-solid fa-arrow-left me-1"></i>Back to Admin Console
+  </a>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-white py-3">
+        <h5 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-sliders me-2"></i>Active Scoring Policy: {{ policy.name }}</h5>
+        <div class="small text-muted mt-1">Version: <strong>{{ version.version_number }}</strong> &bull; Composite Scoring Model: <code>Overall Compliance Score = &Sigma; (Wi &times; Ci) &times; 100</code></div>
+      </div>
+      <div class="card-body p-4">
+        <form method="POST" action="{{ url_for('administration.scoring_config') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+          <h6 class="fw-bold text-dark mb-3">1. Regulatory Domain Weights (&Sigma; Wi must equal exactly 1.00)</h6>
+          
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Data Protection Domain Weight (W1)</label>
+            <div class="input-group input-group-sm">
+              <input type="number" step="0.01" min="0.05" max="0.90" name="weight_dp" class="form-control" value="{{ version.domain_weights.get('DATA_PROTECTION', 0.35) }}" required>
+              <span class="input-group-text">35% Recommended</span>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Tax Compliance Domain Weight (W2)</label>
+            <div class="input-group input-group-sm">
+              <input type="number" step="0.01" min="0.05" max="0.90" name="weight_tax" class="form-control" value="{{ version.domain_weights.get('TAX', 0.35) }}" required>
+              <span class="input-group-text">35% Recommended</span>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label small fw-semibold">Employment & Labour Domain Weight (W3)</label>
+            <div class="input-group input-group-sm">
+              <input type="number" step="0.01" min="0.05" max="0.90" name="weight_labour" class="form-control" value="{{ version.domain_weights.get('LABOUR', 0.30) }}" required>
+              <span class="input-group-text">30% Recommended</span>
+            </div>
+          </div>
+
+          <h6 class="fw-bold text-dark mb-3 border-top pt-3">2. Standard Response Factors</h6>
+          <div class="table-responsive mb-4">
+            <table class="table table-sm table-bordered">
+              <thead class="table-light">
+                <tr>
+                  <th>Response Value</th>
+                  <th>Score Factor</th>
+                  <th>Formula Handling</th>
+                </tr>
+              </thead>
+              <tbody class="small">
+                <tr>
+                  <td><span class="badge bg-success">Compliant</span></td>
+                  <td><strong>1.0</strong> (100%)</td>
+                  <td>Included in numerator and denominator</td>
+                </tr>
+                <tr>
+                  <td><span class="badge bg-warning text-dark">Partially Compliant</span></td>
+                  <td><strong>0.5</strong> (50%)</td>
+                  <td>Included in numerator and denominator</td>
+                </tr>
+                <tr>
+                  <td><span class="badge bg-danger">Non-Compliant</span></td>
+                  <td><strong>0.0</strong> (0%)</td>
+                  <td>Included in denominator only</td>
+                </tr>
+                <tr>
+                  <td><span class="badge bg-secondary">Not Applicable</span></td>
+                  <td><strong>Exempt</strong></td>
+                  <td>Excluded from both numerator and denominator</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h6 class="fw-bold text-dark mb-3 border-top pt-3">3. RAG Risk Classification Thresholds</h6>
+          <div class="p-3 bg-light rounded border mb-4 small">
+            <div class="d-flex justify-content-between py-1 border-bottom">
+              <span><span class="badge bg-danger me-2">High Risk (Red)</span> Score Range:</span>
+              <span class="fw-bold">0.00% &ndash; 49.99%</span>
+            </div>
+            <div class="d-flex justify-content-between py-1 border-bottom">
+              <span><span class="badge bg-warning text-dark me-2">Moderate Risk (Amber)</span> Score Range:</span>
+              <span class="fw-bold">50.00% &ndash; 79.99%</span>
+            </div>
+            <div class="d-flex justify-content-between py-1">
+              <span><span class="badge bg-success me-2">Compliant (Green)</span> Score Range:</span>
+              <span class="fw-bold">80.00% &ndash; 100.00%</span>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-sm px-4 fw-semibold">
+            <i class="fa-solid fa-floppy-disk me-1"></i>Save Scoring Policy Configuration
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

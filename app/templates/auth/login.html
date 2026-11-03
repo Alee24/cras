@@ -1,0 +1,44 @@
+{% extends "layouts/auth.html" %}
+
+{% block title %}Sign In - CRAS{% endblock %}
+
+{% block content %}
+<h5 class="fw-bold mb-3 text-dark">Sign In to Your Workspace</h5>
+
+<form method="POST" action="{{ url_for('auth.login', next=request.args.get('next')) }}">
+  {{ form.hidden_tag() }}
+
+  <div class="mb-3">
+    <label class="form-label small fw-semibold" for="email">Work Email Address</label>
+    {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), placeholder="name@company.co.ke", autofocus=true) }}
+    {% for error in form.email.errors %}
+      <div class="invalid-feedback small">{{ error }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="mb-3">
+    <div class="d-flex justify-content-between align-items-center">
+      <label class="form-label small fw-semibold" for="password">Password</label>
+    </div>
+    {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), placeholder="••••••••") }}
+    {% for error in form.password.errors %}
+      <div class="invalid-feedback small">{{ error }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="mb-3 form-check">
+    {{ form.remember_me(class="form-check-input") }}
+    <label class="form-check-label small text-muted" for="remember_me">Stay signed in on this computer</label>
+  </div>
+
+  <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+    <i class="fa-solid fa-right-to-bracket me-2"></i>Sign In
+  </button>
+</form>
+
+<div class="mt-4 text-center">
+  <p class="small text-muted mb-0">
+    New SME? <a href="{{ url_for('auth.register') }}" class="fw-semibold text-primary text-decoration-none">Register your organization</a>
+  </p>
+</div>
+{% endblock %}

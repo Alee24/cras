@@ -1,0 +1,88 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Evidence Vault - CRAS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h3 class="fw-bold mb-1 text-primary">Evidence Vault</h3>
+    <p class="text-muted small mb-0">Secure repository of compliance documents, certificates, policies, and payment receipts.</p>
+  </div>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+    <h5 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-folder-open me-2"></i>Uploaded Compliance Evidence ({{ evidence_list|length }})</h5>
+  </div>
+  <div class="card-body p-0">
+    {% if evidence_list %}
+    <div class="table-responsive">
+      <table class="table table-cras mb-0">
+        <thead>
+          <tr>
+            <th>Obligation</th>
+            <th>Document Name</th>
+            <th>MIME / Type</th>
+            <th>Size</th>
+            <th>Uploaded By</th>
+            <th>Date</th>
+            <th>Verification Status</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ev in evidence_list %}
+          <tr>
+            <td>
+              <span class="badge bg-light text-dark border font-monospace">{{ ev.requirement.code if ev.requirement else 'N/A' }}</span>
+              <div class="small text-muted">{{ ev.requirement.title[:30] if ev.requirement else '' }}...</div>
+            </td>
+            <td>
+              <div class="fw-bold">{{ ev.original_filename }}</div>
+              <div class="text-muted small">{{ ev.description or 'No notes provided' }}</div>
+            </td>
+            <td><span class="badge bg-light text-dark border small font-monospace">{{ ev.mime_type }}</span></td>
+            <td><span class="small">{{ (ev.file_size / 1024)|round(1) }} KB</span></td>
+            <td><span class="small">{{ ev.uploaded_by.full_name }}</span></td>
+            <td><span class="small">{{ ev.uploaded_at.strftime('%d %b %Y %H:%M') }}</span></td>
+            <td>{{ ev.verification_status|status_badge }}</td>
+            <td class="text-end">
+              <div class="btn-group btn-group-sm">
+                <a href="{{ url_for('evidence.download_file', evidence_id=ev.id) }}" class="btn btn-outline-primary" title="Download Document">
+                  <i class="fa-solid fa-download"></i>
+                </a>
+                <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown"></button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                  <li><h6 class="dropdown-header">Verify Evidence</h6></li>
+                  <li>
+                    <form method="POST" action="{{ url_for('evidence.verify_evidence', evidence_id=ev.id) }}">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                      <input type="hidden" name="status" value="VERIFIED"/>
+                      <button type="submit" class="dropdown-item text-success"><i class="fa-solid fa-check me-2"></i>Mark Verified</button>
+                    </form>
+                  </li>
+                  <li>
+                    <form method="POST" action="{{ url_for('evidence.verify_evidence', evidence_id=ev.id) }}">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                      <input type="hidden" name="status" value="REJECTED"/>
+                      <button type="submit" class="dropdown-item text-danger"><i class="fa-solid fa-xmark me-2"></i>Mark Rejected</button>
+                    </form>
+                  </li>
+                </ul>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+      <i class="fa-solid fa-folder-open fa-3x text-secondary mb-3"></i>
+      <h5>No Evidence Uploaded Yet</h5>
+      <p class="small mb-0">Evidence documents attached during compliance assessments will automatically appear in this vault.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

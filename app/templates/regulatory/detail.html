@@ -1,0 +1,126 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Obligation {{ req.code }} - {{ req.title }} - CRAS{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <a href="{{ url_for('regulatory.framework', domain=req.domain.code) }}" class="text-decoration-none small text-muted">
+        <i class="fa-solid fa-arrow-left me-1"></i>Back to {{ req.domain.title }} Framework
+      </a>
+      <div class="d-flex align-items-center gap-2 mt-1">
+        <span class="badge bg-light text-dark border font-monospace fs-6">{{ req.code }}</span>
+        <h3 class="fw-bold text-primary mb-0">{{ req.title }}</h3>
+      </div>
+    </div>
+    <div>
+      <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">
+        <i class="fa-solid fa-check-double me-1"></i>{{ req.verification_status }}
+      </span>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <!-- Requirement Details Card -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-white py-3">
+        <h5 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-book-open me-2"></i>Statutory Obligation Overview</h5>
+      </div>
+      <div class="card-body">
+        <div class="mb-3">
+          <label class="text-muted text-uppercase fw-semibold small" style="font-size: 0.72rem;">Plain-Language Requirement</label>
+          <div class="fs-6 text-dark">{{ req.plain_description }}</div>
+        </div>
+
+        <div class="mb-3">
+          <label class="text-muted text-uppercase fw-semibold small" style="font-size: 0.72rem;">Statutory Legal Reference</label>
+          <div class="p-3 bg-light rounded border font-monospace text-primary fw-semibold small">
+            {{ req.legal_reference }}
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="text-muted text-uppercase fw-semibold small" style="font-size: 0.72rem;">Applicability Rule</label>
+          <div class="small text-muted">{{ req.applicability_rule }}</div>
+        </div>
+
+        <div class="mb-3">
+          <label class="text-muted text-uppercase fw-semibold small" style="font-size: 0.72rem;">Required Evidence & Documentation</label>
+          <div class="p-3 bg-light rounded border text-dark small">
+            {{ req.required_evidence_desc or 'Documented evidence, certificate of compliance, or payment voucher.' }}
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="text-muted text-uppercase fw-semibold small" style="font-size: 0.72rem;">Potential Regulatory Consequences of Non-Compliance</label>
+          <div class="p-3 bg-danger-subtle text-danger rounded border border-danger-subtle small">
+            <i class="fa-solid fa-triangle-exclamation me-1"></i>{{ req.potential_consequence }}
+          </div>
+        </div>
+
+        <div>
+          <label class="text-muted text-uppercase fw-semibold small" style="font-size: 0.72rem;">Recommended Corrective Action Plan</label>
+          <div class="p-3 bg-success-subtle text-success rounded border border-success-subtle small">
+            <i class="fa-solid fa-wrench me-1"></i>{{ req.recommended_corrective_action }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <!-- Obligation Metadata Card -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-white py-3">
+        <h5 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-sliders me-2"></i>Parameters</h5>
+      </div>
+      <div class="card-body">
+        <div class="mb-3">
+          <label class="text-muted text-uppercase fw-semibold small" style="font-size: 0.72rem;">Regulatory Domain</label>
+          <div class="fw-semibold">{{ req.domain.title }}</div>
+        </div>
+        <div class="mb-3">
+          <label class="text-muted text-uppercase fw-semibold small" style="font-size: 0.72rem;">Category</label>
+          <div>{{ req.category.title }}</div>
+        </div>
+        <div class="mb-3">
+          <label class="text-muted text-uppercase fw-semibold small" style="font-size: 0.72rem;">Risk Weight Factor</label>
+          <div>
+            {% if req.risk_weight >= 3.0 %}
+            <span class="badge bg-danger">Critical Severity (3.0x)</span>
+            {% elif req.risk_weight >= 2.0 %}
+            <span class="badge bg-warning text-dark">High Severity (2.0x)</span>
+            {% else %}
+            <span class="badge bg-secondary">Standard (1.0x)</span>
+            {% endif %}
+          </div>
+        </div>
+        <div>
+          <label class="text-muted text-uppercase fw-semibold small" style="font-size: 0.72rem;">Statutory Enactment Date</label>
+          <div class="small text-muted">{{ req.effective_date.strftime('%d %B %Y') if req.effective_date else 'Current Statutory Framework' }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Questions Box -->
+    <div class="card shadow-sm">
+      <div class="card-header bg-white py-3">
+        <h5 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-circle-question me-2"></i>Evaluation Question</h5>
+      </div>
+      <div class="card-body">
+        {% for q in req.questions %}
+        <p class="small fw-semibold mb-2">{{ q.question_text }}</p>
+        {% if q.help_text %}
+        <div class="p-2 bg-light rounded text-muted small" style="font-size: 0.72rem;">
+          <strong>Help:</strong> {{ q.help_text }}
+        </div>
+        {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

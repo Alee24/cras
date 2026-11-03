@@ -1,0 +1,139 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Compliance Gaps Management - CRAS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h3 class="fw-bold mb-1 text-primary">Compliance Gaps Management</h3>
+    <p class="text-muted small mb-0">Track and remediate identified statutory exposures and non-compliant obligations.</p>
+  </div>
+  <div>
+    <a href="{{ url_for('reports.download_gaps_csv') }}" class="btn btn-sm btn-outline-secondary">
+      <i class="fa-solid fa-file-csv me-1"></i>Export Gaps CSV
+    </a>
+  </div>
+</div>
+
+<!-- Summary Metric Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-md-3">
+    <div class="card p-3">
+      <div class="text-muted small text-uppercase fw-semibold">Total Gaps</div>
+      <div class="fs-3 fw-bold text-primary">{{ total_gaps }}</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-md-3">
+    <div class="card p-3">
+      <div class="text-muted small text-uppercase fw-semibold">Open / Actionable</div>
+      <div class="fs-3 fw-bold text-danger">{{ open_gaps }}</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-md-3">
+    <div class="card p-3">
+      <div class="text-muted small text-uppercase fw-semibold">Critical Severity</div>
+      <div class="fs-3 fw-bold text-danger">{{ critical_gaps }}</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-md-3">
+    <div class="card p-3">
+      <div class="text-muted small text-uppercase fw-semibold">Resolved Gaps</div>
+      <div class="fs-3 fw-bold text-success">{{ resolved_gaps }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+  <div class="card-body py-2">
+    <form method="GET" action="{{ url_for('compliance_gaps.index') }}" class="row g-2 align-items-center">
+      <div class="col-md-3">
+        <select name="severity" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">All Severities</option>
+          <option value="CRITICAL" {% if current_severity == 'CRITICAL' %}selected{% endif %}>Critical</option>
+          <option value="HIGH" {% if current_severity == 'HIGH' %}selected{% endif %}>High</option>
+          <option value="MEDIUM" {% if current_severity == 'MEDIUM' %}selected{% endif %}>Medium</option>
+          <option value="LOW" {% if current_severity == 'LOW' %}selected{% endif %}>Low</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">All Statuses</option>
+          <option value="OPEN" {% if current_status == 'OPEN' %}selected{% endif %}>Open</option>
+          <option value="ASSIGNED" {% if current_status == 'ASSIGNED' %}selected{% endif %}>Assigned</option>
+          <option value="IN_PROGRESS" {% if current_status == 'IN_PROGRESS' %}selected{% endif %}>In Progress</option>
+          <option value="RESOLVED" {% if current_status == 'RESOLVED' %}selected{% endif %}>Resolved</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <select name="domain" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">All Regulatory Domains</option>
+          {% for d in domains %}
+          <option value="{{ d.code }}" {% if current_domain == d.code %}selected{% endif %}>{{ d.title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3 text-end">
+        <a href="{{ url_for('compliance_gaps.index') }}" class="btn btn-sm btn-light border">Reset Filters</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Gaps Table -->
+<div class="card shadow-sm">
+  <div class="card-body p-0">
+    {% if gaps %}
+    <div class="table-responsive">
+      <table class="table table-cras mb-0">
+        <thead>
+          <tr>
+            <th>Obligation Code</th>
+            <th>Domain</th>
+            <th>Severity</th>
+            <th>Gap Summary</th>
+            <th>Statutory Citation</th>
+            <th>Status</th>
+            <th class="text-end">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for g in gaps %}
+          <tr>
+            <td><span class="badge bg-light text-dark border font-monospace">{{ g.requirement.code if g.requirement else 'GAP' }}</span></td>
+            <td><span class="small fw-semibold">{{ g.domain.title if g.domain else '' }}</span></td>
+            <td>
+              {% if g.severity == 'CRITICAL' %}
+              <span class="badge bg-danger">Critical</span>
+              {% elif g.severity == 'HIGH' %}
+              <span class="badge bg-warning text-dark">High</span>
+              {% else %}
+              <span class="badge bg-secondary">Medium</span>
+              {% endif %}
+            </td>
+            <td>
+              <div class="fw-semibold">{{ g.gap_title }}</div>
+              <div class="text-muted small text-truncate" style="max-width: 280px;">{{ g.recommended_action }}</div>
+            </td>
+            <td><span class="small font-monospace text-muted">{{ g.legal_reference }}</span></td>
+            <td>{{ g.status|status_badge }}</td>
+            <td class="text-end">
+              <a href="{{ url_for('compliance_gaps.view_gap', gap_id=g.id) }}" class="btn btn-sm btn-outline-primary">
+                View & Remediate
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+      <i class="fa-solid fa-shield-check fa-3x text-success mb-3"></i>
+      <h5>No Compliance Gaps Found</h5>
+      <p class="small mb-0">All audited requirements are currently conforming to regulatory standards.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

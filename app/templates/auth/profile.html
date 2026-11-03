@@ -1,0 +1,75 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Account Profile - CRAS{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header bg-white d-flex align-items-center">
+        <i class="fa-solid fa-user me-2 text-primary"></i>
+        <h5 class="mb-0 fw-bold">Personal Profile</h5>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('auth.profile') }}">
+          {{ form.hidden_tag() }}
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Email Address</label>
+            <input type="text" class="form-control" value="{{ current_user.email }}" readonly disabled>
+            <div class="form-text small">Email address cannot be changed directly.</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Full Name</label>
+            {{ form.full_name(class="form-control" + (" is-invalid" if form.full_name.errors else "")) }}
+            {% for error in form.full_name.errors %}<div class="invalid-feedback small">{{ error }}</div>{% endfor %}
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Phone Number</label>
+            {{ form.phone_number(class="form-control" + (" is-invalid" if form.phone_number.errors else "")) }}
+            {% for error in form.phone_number.errors %}<div class="invalid-feedback small">{{ error }}</div>{% endfor %}
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Account Role</label>
+            <input type="text" class="form-control" value="{{ current_role_name }}" readonly disabled>
+          </div>
+          <button type="submit" name="submit" value="Save Profile Changes" class="btn btn-primary">
+            <i class="fa-solid fa-floppy-disk me-1"></i>Save Changes
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header bg-white d-flex align-items-center">
+        <i class="fa-solid fa-key me-2 text-primary"></i>
+        <h5 class="mb-0 fw-bold">Change Password</h5>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('auth.change_password') }}">
+          {{ password_form.hidden_tag() }}
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Current Password</label>
+            {{ password_form.current_password(class="form-control" + (" is-invalid" if password_form.current_password.errors else "")) }}
+            {% for error in password_form.current_password.errors %}<div class="invalid-feedback small">{{ error }}</div>{% endfor %}
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">New Password</label>
+            {{ password_form.new_password(class="form-control" + (" is-invalid" if password_form.new_password.errors else "")) }}
+            {% for error in password_form.new_password.errors %}<div class="invalid-feedback small">{{ error }}</div>{% endfor %}
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Confirm New Password</label>
+            {{ password_form.confirm_password(class="form-control" + (" is-invalid" if password_form.confirm_password.errors else "")) }}
+            {% for error in password_form.confirm_password.errors %}<div class="invalid-feedback small">{{ error }}</div>{% endfor %}
+          </div>
+          <button type="submit" class="btn btn-outline-danger">
+            <i class="fa-solid fa-lock me-1"></i>Update Password
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

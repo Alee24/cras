@@ -1,0 +1,22 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}404 Page Not Found - CRAS{% endblock %}
+
+{% block content %}
+<div class="text-center py-5">
+  <div class="card p-5 mx-auto shadow-sm" style="max-width: 550px;">
+    <div class="text-warning mb-3">
+      <i class="fa-solid fa-triangle-exclamation fa-3x"></i>
+    </div>
+    <h3 class="fw-bold mb-2">Resource Not Found (404)</h3>
+    <p class="text-muted small mb-4">
+      The requested page, assessment record, or compliance document does not exist or has been moved.
+    </p>
+    <div>
+      <a href="{{ url_for('dashboard.index') }}" class="btn btn-primary btn-sm px-4">
+        <i class="fa-solid fa-house me-1"></i>Return to Dashboard
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

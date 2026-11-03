@@ -1,0 +1,60 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Notifications - CRAS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h3 class="fw-bold mb-1 text-primary">In-App Notifications</h3>
+    <p class="text-muted small mb-0">Statutory deadline alerts, overdue reminders, and corrective action assignments.</p>
+  </div>
+  {% if unread_notifications_count > 0 %}
+  <form method="POST" action="{{ url_for('notifications.mark_all_read') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    <button type="submit" class="btn btn-sm btn-outline-primary">
+      <i class="fa-solid fa-check-double me-1"></i>Mark All Read
+    </button>
+  </form>
+  {% endif %}
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-header bg-white py-3">
+    <h5 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-bell me-2"></i>Recent Notifications</h5>
+  </div>
+  <div class="card-body p-0">
+    {% if notifications %}
+    <div class="list-group list-group-flush">
+      {% for n in notifications %}
+      <div class="list-group-item d-flex justify-content-between align-items-center p-3 {% if not n.is_read %}bg-light border-start border-3 border-primary{% endif %}">
+        <div class="d-flex align-items-center gap-3">
+          <div class="p-2 rounded-circle {% if n.notification_type == 'DEADLINE' or n.notification_type == 'OVERDUE' %}bg-danger-subtle text-danger{% elif n.notification_type == 'ACTION' %}bg-warning-subtle text-warning{% else %}bg-primary-subtle text-primary{% endif %}">
+            <i class="fa-solid {% if n.notification_type == 'DEADLINE' or n.notification_type == 'OVERDUE' %}fa-clock{% elif n.notification_type == 'ACTION' %}fa-list-check{% else %}fa-circle-info{% endif %}"></i>
+          </div>
+          <div>
+            <div class="fw-bold small {% if not n.is_read %}text-primary{% endif %}">{{ n.title }}</div>
+            <div class="text-muted small">{{ n.message }}</div>
+            <div class="text-muted" style="font-size: 0.7rem;">{{ n.created_at.strftime('%d %b %Y %H:%M') }}</div>
+          </div>
+        </div>
+
+        <div>
+          {% if not n.is_read %}
+          <a href="{{ url_for('notifications.mark_read', notification_id=n.id) }}" class="btn btn-sm btn-light border" title="Mark as read">
+            <i class="fa-solid fa-check text-success"></i>
+          </a>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted small">
+      <i class="fa-regular fa-bell-slash fa-3x text-secondary mb-3"></i>
+      <h5>No Notifications</h5>
+      <p class="mb-0">You are all caught up!</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

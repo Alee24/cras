@@ -1,0 +1,95 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Company Profile - {{ org.name }} - CRAS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h3 class="fw-bold mb-1 text-primary">{{ org.name }}</h3>
+    <p class="text-muted small mb-0">Statutory business registration and enterprise profile settings.</p>
+  </div>
+  <div>
+    <a href="{{ url_for('organizations.edit') }}" class="btn btn-sm btn-outline-primary">
+      <i class="fa-solid fa-pen-to-square me-1"></i>Edit Profile
+    </a>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <!-- Organization Details Card -->
+  <div class="col-lg-7">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-white py-3">
+        <h5 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-building me-2"></i>Statutory Registration Details</h5>
+      </div>
+      <div class="card-body">
+        <div class="row g-3 small">
+          <div class="col-md-6">
+            <label class="text-muted text-uppercase fw-semibold" style="font-size: 0.72rem;">Business Registration No.</label>
+            <div class="fw-bold font-monospace fs-6">{{ org.business_registration_number }}</div>
+          </div>
+          <div class="col-md-6">
+            <label class="text-muted text-uppercase fw-semibold" style="font-size: 0.72rem;">KRA PIN</label>
+            <div class="fw-bold font-monospace fs-6 text-primary">{{ org.kra_pin }}</div>
+          </div>
+          <div class="col-md-6">
+            <label class="text-muted text-uppercase fw-semibold" style="font-size: 0.72rem;">Industry Sector</label>
+            <div class="fw-semibold">{{ org.industry_sector }}</div>
+          </div>
+          <div class="col-md-6">
+            <label class="text-muted text-uppercase fw-semibold" style="font-size: 0.72rem;">Entity Structure</label>
+            <div class="fw-semibold">{{ org.business_type }}</div>
+          </div>
+          <div class="col-md-6">
+            <label class="text-muted text-uppercase fw-semibold" style="font-size: 0.72rem;">Company Size</label>
+            <div>{{ org.organization_size }} ({{ org.employee_count }} employees)</div>
+          </div>
+          <div class="col-md-6">
+            <label class="text-muted text-uppercase fw-semibold" style="font-size: 0.72rem;">County of Operation</label>
+            <div>{{ org.county }}</div>
+          </div>
+          <div class="col-md-6">
+            <label class="text-muted text-uppercase fw-semibold" style="font-size: 0.72rem;">Contact Email</label>
+            <div>{{ org.contact_email }}</div>
+          </div>
+          <div class="col-md-6">
+            <label class="text-muted text-uppercase fw-semibold" style="font-size: 0.72rem;">Telephone</label>
+            <div>{{ org.phone_number or 'Not provided' }}</div>
+          </div>
+          <div class="col-md-6">
+            <label class="text-muted text-uppercase fw-semibold" style="font-size: 0.72rem;">Physical Address</label>
+            <div>{{ org.physical_address or 'Not provided' }}</div>
+          </div>
+          <div class="col-md-6">
+            <label class="text-muted text-uppercase fw-semibold" style="font-size: 0.72rem;">Registration Date</label>
+            <div>{{ org.registration_date.strftime('%d %b %Y') if org.registration_date else 'N/A' }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Summary & Departments -->
+  <div class="col-lg-5">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h5 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-sitemap me-2"></i>Active Departments ({{ departments|length }})</h5>
+        <a href="{{ url_for('organizations.departments') }}" class="btn btn-sm btn-outline-primary">Manage</a>
+      </div>
+      <div class="card-body p-0">
+        <div class="list-group list-group-flush">
+          {% for d in departments %}
+          <div class="list-group-item d-flex justify-content-between align-items-center py-2 px-3 small">
+            <div>
+              <span class="fw-semibold">{{ d.name }}</span>
+              {% if d.code %}<span class="badge bg-light text-dark border ms-1 font-monospace">{{ d.code }}</span>{% endif %}
+            </div>
+            <span class="text-muted" style="font-size: 0.72rem;">{{ d.created_at.strftime('%b %Y') }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

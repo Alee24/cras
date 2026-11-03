@@ -1,0 +1,215 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Risk Analytics & Compliance Trends - CRAS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h3 class="fw-bold mb-1 text-primary">Risk Analytics & Compliance Intelligence</h3>
+    <p class="text-muted small mb-0">Multi-domain analytics, historical compliance trends, and risk distribution for {{ org.name }}.</p>
+  </div>
+</div>
+
+<!-- Row 1: Domain Radar / Bar & Risk Distribution -->
+<div class="row g-4 mb-4">
+  <div class="col-lg-6">
+    <div class="card h-100 shadow-sm">
+      <div class="card-header bg-white py-3">
+        <h5 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-chart-pie me-2"></i>Risk Distribution (Obligation Responses)</h5>
+      </div>
+      <div class="card-body d-flex flex-column align-items-center justify-content-center">
+        {% if latest %}
+        <div style="height: 250px; width: 250px;">
+          <canvas id="riskDistributionChart"></canvas>
+        </div>
+        <div class="mt-3 text-center small text-muted">
+          Based on latest completed assessment: <strong>{{ latest.assessment_period }}</strong>
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted small">No assessment data available to generate risk distribution.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card h-100 shadow-sm">
+      <div class="card-header bg-white py-3">
+        <h5 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-layer-group me-2"></i>Domain Score Comparison</h5>
+      </div>
+      <div class="card-body">
+        {% if domain_scores_map %}
+        <div style="height: 260px;">
+          <canvas id="domainComparisonChart"></canvas>
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted small">Complete an assessment to view domain score comparisons.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Row 2: Gap Severity & Historical Progress -->
+<div class="row g-4 mb-4">
+  <div class="col-lg-6">
+    <div class="card h-100 shadow-sm">
+      <div class="card-header bg-white py-3">
+        <h5 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-triangle-exclamation me-2 text-danger"></i>Compliance Gaps by Severity</h5>
+      </div>
+      <div class="card-body">
+        <div style="height: 250px;">
+          <canvas id="gapSeverityChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card h-100 shadow-sm">
+      <div class="card-header bg-white py-3">
+        <h5 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-chart-line me-2"></i>Historical Score Progression</h5>
+      </div>
+      <div class="card-body">
+        {% if assessments %}
+        <div style="height: 250px;">
+          <canvas id="historyTimelineChart"></canvas>
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted small">No historical assessments recorded.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    {% if latest %}
+    // 1. Risk Distribution Doughnut Chart
+    const riskCtx = document.getElementById('riskDistributionChart');
+    if (riskCtx) {
+      new Chart(riskCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Compliant', 'Partially Compliant', 'Non-Compliant', 'Not Applicable'],
+          datasets: [{
+            data: [
+              {{ latest.compliant_count }},
+              {{ latest.partially_compliant_count }},
+              {{ latest.non_compliant_count }},
+              {{ latest.not_applicable_count }}
+            ],
+            backgroundColor: ['#16A34A', '#F59E0B', '#DC2626', '#94A3B8'],
+            borderWidth: 2,
+            borderColor: '#FFFFFF'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom' }
+          }
+        }
+      });
+    }
+
+    // 2. Domain Comparison Chart
+    const domainCtx = document.getElementById('domainComparisonChart');
+    if (domainCtx) {
+      const dLabels = [];
+      const dScores = [];
+      {% for code, data in domain_scores_map.items() %}
+      dLabels.push("{{ data.title }}");
+      dScores.push({{ data.score }});
+      {% endfor %}
+
+      new Chart(domainCtx, {
+        type: 'bar',
+        data: {
+          labels: dLabels,
+          datasets: [{
+            label: 'Domain Score (%)',
+            data: dScores,
+            backgroundColor: dScores.map(v => v >= 80 ? '#16A34A' : (v >= 50 ? '#F59E0B' : '#DC2626')),
+            borderRadius: 6,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } }
+          },
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+    {% endif %}
+
+    // 3. Gap Severity Chart
+    const gapCtx = document.getElementById('gapSeverityChart');
+    if (gapCtx) {
+      new Chart(gapCtx, {
+        type: 'bar',
+        data: {
+          labels: ['Critical', 'High', 'Medium', 'Low'],
+          datasets: [{
+            label: 'Identified Gaps',
+            data: [
+              {{ gap_stats.CRITICAL }},
+              {{ gap_stats.HIGH }},
+              {{ gap_stats.MEDIUM }},
+              {{ gap_stats.LOW }}
+            ],
+            backgroundColor: ['#DC2626', '#EA580C', '#D97706', '#64748B'],
+            borderRadius: 6,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { beginAtZero: true, ticks: { precision: 0 } }
+          },
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+
+    // 4. Historical Timeline Chart
+    const histCtx = document.getElementById('historyTimelineChart');
+    if (histCtx) {
+      const hLabels = [{% for a in assessments %}"{{ a.assessment_period }}",{% endfor %}];
+      const hScores = [{% for a in assessments %}{{ a.overall_score or 0 }},{% endfor %}];
+
+      new Chart(histCtx, {
+        type: 'line',
+        data: {
+          labels: hLabels,
+          datasets: [{
+            label: 'Compliance Score',
+            data: hScores,
+            borderColor: '#2563EB',
+            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+            fill: true,
+            tension: 0.3,
+            pointBackgroundColor: '#172B4D',
+            pointRadius: 6,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } }
+          }
+        }
+      });
+    }
+  });
+</script>
+{% endblock %}

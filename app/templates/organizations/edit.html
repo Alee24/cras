@@ -1,0 +1,76 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Edit Organization Profile - CRAS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card shadow-sm">
+      <div class="card-header bg-white py-3">
+        <h4 class="fw-bold mb-1 text-primary"><i class="fa-solid fa-pen-to-square me-2"></i>Update Organization Profile</h4>
+        <p class="text-muted small mb-0">Modify company contact information and physical address for {{ org.name }}.</p>
+      </div>
+      <div class="card-body p-4">
+        <form method="POST" action="{{ url_for('organizations.edit') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Company / Organization Name</label>
+            <input type="text" name="name" class="form-control form-control-sm" value="{{ org.name }}" required>
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label small fw-semibold">Business Registration No.</label>
+              <input type="text" class="form-control form-control-sm" value="{{ org.business_registration_number }}" readonly disabled>
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-semibold">KRA PIN</label>
+              <input type="text" class="form-control form-control-sm" value="{{ org.kra_pin }}" readonly disabled>
+            </div>
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label small fw-semibold">Total Employees</label>
+              <input type="number" name="employee_count" class="form-control form-control-sm" value="{{ org.employee_count }}" min="1">
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-semibold">County of Operation</label>
+              <input type="text" name="county" class="form-control form-control-sm" value="{{ org.county }}">
+            </div>
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label small fw-semibold">Contact Email</label>
+              <input type="email" name="contact_email" class="form-control form-control-sm" value="{{ org.contact_email }}" required>
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-semibold">Telephone Number</label>
+              <input type="text" name="phone_number" class="form-control form-control-sm" value="{{ org.phone_number or '' }}">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Physical Address</label>
+            <input type="text" name="physical_address" class="form-control form-control-sm" value="{{ org.physical_address or '' }}" placeholder="e.g. 4th Floor, Westlands Commercial Centre, Nairobi">
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label small fw-semibold">Website</label>
+            <input type="text" name="website" class="form-control form-control-sm" value="{{ org.website or '' }}" placeholder="e.g. https://apexlogistics.co.ke">
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center">
+            <a href="{{ url_for('organizations.profile') }}" class="btn btn-outline-secondary btn-sm">Cancel</a>
+            <button type="submit" class="btn btn-primary btn-sm px-4 fw-semibold">
+              <i class="fa-solid fa-floppy-disk me-1"></i>Save Updates
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
