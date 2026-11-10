@@ -16,54 +16,53 @@ from app.services.seed_data import seed_roles_and_permissions, seed_scoring_poli
 
 
 def ensure_sample_evidence_files(upload_dir_str: str) -> dict:
-    """Creates realistic sample evidence files on disk for demonstration purposes."""
+    """Creates realistic sample evidence files on disk for demonstration purposes with full statutory content."""
+    from app.services.pdf_evidence_generator import (
+        generate_kra_tax_compliance_cert,
+        generate_odpc_registration_cert,
+        generate_wiba_policy_schedule,
+        generate_osha_inspection_report,
+        generate_etims_signoff_cert,
+    )
+
     upload_dir = Path(upload_dir_str)
     upload_dir.mkdir(parents=True, exist_ok=True)
 
-    sample_files = {
+    default_org = "Apex Logistics Solutions Ltd"
+    default_pin = "P051992233M"
+
+    generators = {
         "KRA_Tax_Compliance_Certificate_2026.pdf": (
-            b"%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Count 1/Kids[3 0 R]>>endobj\n"
-            b"3 0 obj<</Type/Page/MediaBox[0 0 612 792]/Parent 2 0 R/Resources<<>>>>endobj\nxref\n0 4\n"
-            b"0000000000 65535 f\n0000000010 00000 n\n0000000060 00000 n\n0000000115 00000 n\n"
-            b"trailer<</Size 4/Root 1 0 R>>\nstartxref\n190\n%%EOF\n",
-            "application/pdf"
+            lambda: generate_kra_tax_compliance_cert(default_org, default_pin),
+            "application/pdf",
         ),
         "ODPC_Data_Controller_Registration_Cert.pdf": (
-            b"%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Count 1/Kids[3 0 R]>>endobj\n"
-            b"3 0 obj<</Type/Page/MediaBox[0 0 612 792]/Parent 2 0 R/Resources<<>>>>endobj\nxref\n0 4\n"
-            b"0000000000 65535 f\n0000000010 00000 n\n0000000060 00000 n\n0000000115 00000 n\n"
-            b"trailer<</Size 4/Root 1 0 R>>\nstartxref\n190\n%%EOF\n",
-            "application/pdf"
+            lambda: generate_odpc_registration_cert(default_org, default_pin),
+            "application/pdf",
         ),
         "WIBA_Workplace_Injury_Insurance_Policy.pdf": (
-            b"%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Count 1/Kids[3 0 R]>>endobj\n"
-            b"3 0 obj<</Type/Page/MediaBox[0 0 612 792]/Parent 2 0 R/Resources<<>>>>endobj\nxref\n0 4\n"
-            b"0000000000 65535 f\n0000000010 00000 n\n0000000060 00000 n\n0000000115 00000 n\n"
-            b"trailer<</Size 4/Root 1 0 R>>\nstartxref\n190\n%%EOF\n",
-            "application/pdf"
+            lambda: generate_wiba_policy_schedule(default_org, 45),
+            "application/pdf",
         ),
         "OSHA_Workplace_Safety_Inspection_Report.pdf": (
-            b"%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Count 1/Kids[3 0 R]>>endobj\n"
-            b"3 0 obj<</Type/Page/MediaBox[0 0 612 792]/Parent 2 0 R/Resources<<>>>>endobj\nxref\n0 4\n"
-            b"0000000000 65535 f\n0000000010 00000 n\n0000000060 00000 n\n0000000115 00000 n\n"
-            b"trailer<</Size 4/Root 1 0 R>>\nstartxref\n190\n%%EOF\n",
-            "application/pdf"
+            lambda: generate_osha_inspection_report(default_org, "Nairobi"),
+            "application/pdf",
         ),
         "eTIMS_System_Integration_Signoff.pdf": (
-            b"%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Count 1/Kids[3 0 R]>>endobj\n"
-            b"3 0 obj<</Type/Page/MediaBox[0 0 612 792]/Parent 2 0 R/Resources<<>>>>endobj\nxref\n0 4\n"
-            b"0000000000 65535 f\n0000000010 00000 n\n0000000060 00000 n\n0000000115 00000 n\n"
-            b"trailer<</Size 4/Root 1 0 R>>\nstartxref\n190\n%%EOF\n",
-            "application/pdf"
+            lambda: generate_etims_signoff_cert(default_org, default_pin),
+            "application/pdf",
         ),
     }
 
     created_paths = {}
-    for filename, (content, mime) in sample_files.items():
+    for filename, (gen_fn, mime) in generators.items():
         stored_name = f"sample_demo_{filename}"
         target_path = upload_dir / stored_name
-        if not target_path.exists():
+        if not target_path.exists() or target_path.stat().st_size < 1000:
+            content = gen_fn()
             target_path.write_bytes(content)
+        else:
+            content = target_path.read_bytes()
         created_paths[filename] = {
             "stored_name": stored_name,
             "path": str(target_path),
@@ -428,8 +427,29 @@ def populate_comprehensive_live_data(upload_folder: str = "uploads") -> dict:
                     if not existing_ev:
                         unique_stored_name = f"org{org.id}_demo_{uuid.uuid4().hex[:8]}_{ev_key}"
                         unique_dest_path = Path(upload_folder) / unique_stored_name
-                        if not unique_dest_path.exists():
-                            unique_dest_path.write_bytes(Path(ev_info["path"]).read_bytes())
+                        if not unique_dest_path.exists() or unique_dest_path.stat().st_size < 1000:
+                            from app.services.pdf_evidence_generator import (
+                                generate_kra_tax_compliance_cert,
+                                generate_odpc_registration_cert,
+                                generate_wiba_policy_schedule,
+                                generate_osha_inspection_report,
+                                generate_etims_signoff_cert,
+                            )
+                            if "Tax" in ev_key or "KRA" in ev_key:
+                                file_bytes = generate_kra_tax_compliance_cert(org.name, org.kra_pin or "P051992233M")
+                            elif "ODPC" in ev_key:
+                                file_bytes = generate_odpc_registration_cert(org.name, org.kra_pin or "P051992233M")
+                            elif "WIBA" in ev_key:
+                                file_bytes = generate_wiba_policy_schedule(org.name, getattr(org, "employee_count", 30) or 30)
+                            elif "OSHA" in ev_key:
+                                file_bytes = generate_osha_inspection_report(org.name, getattr(org, "county", "Nairobi") or "Nairobi")
+                            elif "eTIMS" in ev_key:
+                                file_bytes = generate_etims_signoff_cert(org.name, org.kra_pin or "P051992233M")
+                            else:
+                                file_bytes = Path(ev_info["path"]).read_bytes()
+                            unique_dest_path.write_bytes(file_bytes)
+                        else:
+                            file_bytes = unique_dest_path.read_bytes()
 
                         ev = AssessmentEvidence(
                             organization_id=org.id,
@@ -438,7 +458,7 @@ def populate_comprehensive_live_data(upload_folder: str = "uploads") -> dict:
                             uploaded_by_id=compliance_user.id,
                             original_filename=ev_key,
                             stored_filename=unique_stored_name,
-                            file_size=ev_info["size"],
+                            file_size=len(file_bytes),
                             mime_type=ev_info["mime"],
                             file_path=str(unique_dest_path),
                             description=f"Official verified document for {match_req.code}",

@@ -48,6 +48,9 @@
             <td>{{ ev.verification_status|status_badge }}</td>
             <td class="text-end">
               <div class="btn-group btn-group-sm">
+                <a href="{{ url_for('evidence.download_file', evidence_id=ev.id, view=1) }}" target="_blank" class="btn btn-outline-secondary" title="View Document in Browser">
+                  <i class="fa-solid fa-eye"></i>
+                </a>
                 <a href="{{ url_for('evidence.download_file', evidence_id=ev.id) }}" class="btn btn-outline-primary" title="Download Document">
                   <i class="fa-solid fa-download"></i>
                 </a>

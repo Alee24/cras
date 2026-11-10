@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, send_file, Response, redirect, url_for, flash
+from flask import Blueprint, render_template, send_file, Response, redirect, url_for, flash, request
 from flask_login import login_required
 from app.models.assessment import ComplianceAssessment
 from app.services.reporting_service import ReportingService
@@ -34,9 +34,48 @@ def download_pdf(assessment_id):
 
     AuditService.log("EXPORT_PDF_REPORT", "ComplianceAssessment", assessment.id, {"filename": filename}, organization_id=org.id)
 
+    as_attachment = request.args.get("view") != "1" and request.args.get("inline") != "1"
     return send_file(
         pdf_buffer,
-        as_attachment=True,
+        as_attachment=as_attachment,
+        download_name=filename,
+        mimetype="application/pdf",
+    )
+
+
+@reports_bp.route("/assessment/<int:assessment_id>/certificate")
+@login_required
+def download_certificate(assessment_id):
+    org = get_active_organization()
+    assessment = ComplianceAssessment.query.filter_by(id=assessment_id, organization_id=org.id).first_or_404()
+
+    pdf_buffer = ReportingService.generate_compliance_certificate_pdf(assessment)
+    filename = f"CRAS_Compliance_Certificate_{org.name.replace(' ', '_')}_{assessment.assessment_period.replace(' ', '_')}.pdf"
+
+    AuditService.log("EXPORT_COMPLIANCE_CERTIFICATE", "ComplianceAssessment", assessment.id, {"filename": filename}, organization_id=org.id)
+
+    as_attachment = request.args.get("view") != "1" and request.args.get("inline") != "1"
+    return send_file(
+        pdf_buffer,
+        as_attachment=as_attachment,
+        download_name=filename,
+        mimetype="application/pdf",
+    )
+
+
+@reports_bp.route("/gaps/pdf")
+@login_required
+def download_gaps_pdf():
+    org = get_active_organization()
+    pdf_buffer = ReportingService.generate_gaps_pdf(org.id)
+    filename = f"CRAS_Compliance_Gaps_Matrix_{org.name.replace(' ', '_')}.pdf"
+
+    AuditService.log("EXPORT_PDF_GAPS", "ComplianceGap", None, {"filename": filename}, organization_id=org.id)
+
+    as_attachment = request.args.get("view") != "1" and request.args.get("inline") != "1"
+    return send_file(
+        pdf_buffer,
+        as_attachment=as_attachment,
         download_name=filename,
         mimetype="application/pdf",
     )
@@ -112,4 +151,3 @@ def download_gaps_csv():
         mimetype="text/csv",
         headers={"Content-Disposition": f"attachment; filename={filename}"},
     )
-

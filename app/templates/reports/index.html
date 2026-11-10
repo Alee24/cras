@@ -3,10 +3,21 @@
 {% block title %}Compliance Reports & Export Centre - CRAS{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
   <div>
     <h3 class="fw-bold mb-1 text-primary">Compliance Reports & Export Centre</h3>
-    <p class="text-muted small mb-0">Generate, download, and export executive compliance audits and statutory gap summaries.</p>
+    <p class="text-muted small mb-0">Generate, view, and download executive compliance audits, statutory certificates, and gap matrices.</p>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{{ url_for('reports.download_gaps_pdf', view=1) }}" target="_blank" class="btn btn-sm btn-outline-danger shadow-sm">
+      <i class="fa-solid fa-file-pdf me-1"></i>View Gaps PDF
+    </a>
+    <a href="{{ url_for('reports.download_gaps_pdf') }}" class="btn btn-sm btn-danger shadow-sm">
+      <i class="fa-solid fa-download me-1"></i>Download Gaps PDF
+    </a>
+    <a href="{{ url_for('reports.download_gaps_csv') }}" class="btn btn-sm btn-outline-primary shadow-sm">
+      <i class="fa-solid fa-file-csv me-1"></i>Gaps CSV
+    </a>
   </div>
 </div>
 
@@ -18,8 +29,8 @@
           <i class="fa-solid fa-file-pdf"></i>
         </div>
         <div>
-          <h6 class="fw-bold mb-1">Executive PDF Reports</h6>
-          <p class="text-muted small mb-0">Full executive compliance audits formatted with CRAS branding, domain scores, and gap matrices.</p>
+          <h6 class="fw-bold mb-1">Executive PDF Reports & Certificates</h6>
+          <p class="text-muted small mb-0">Comprehensive multi-page audit reports with all 43 statutory questions, official landscape compliance certificates, and running pagination.</p>
         </div>
       </div>
     </div>
@@ -57,7 +68,7 @@
 <!-- Completed Assessments Report Table -->
 <div class="card shadow-sm mb-4">
   <div class="card-header bg-white py-3">
-    <h5 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-folder-tree me-2"></i>Assessment Audit Reports</h5>
+    <h5 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-folder-tree me-2"></i>Assessment Audit Reports & Official Certificates</h5>
   </div>
   <div class="card-body p-0">
     {% if assessments %}
@@ -71,7 +82,7 @@
             <th>Score</th>
             <th>Classification</th>
             <th>Status</th>
-            <th class="text-end">Download & Print</th>
+            <th class="text-end">Download & View</th>
           </tr>
         </thead>
         <tbody>
@@ -94,8 +105,14 @@
             <td>{{ a.status|status_badge }}</td>
             <td class="text-end">
               <div class="btn-group btn-group-sm">
-                <a href="{{ url_for('reports.download_pdf', assessment_id=a.id) }}" class="btn btn-outline-danger" title="Download Official PDF">
+                <a href="{{ url_for('reports.download_pdf', assessment_id=a.id, view=1) }}" target="_blank" class="btn btn-outline-danger" title="Preview PDF Audit Report">
+                  <i class="fa-solid fa-eye me-1"></i>View
+                </a>
+                <a href="{{ url_for('reports.download_pdf', assessment_id=a.id) }}" class="btn btn-outline-danger" title="Download Official PDF Report">
                   <i class="fa-solid fa-file-pdf me-1"></i>PDF
+                </a>
+                <a href="{{ url_for('reports.download_certificate', assessment_id=a.id, view=1) }}" target="_blank" class="btn btn-outline-warning text-dark fw-semibold" title="Official Landscape Certificate of Compliance">
+                  <i class="fa-solid fa-award me-1"></i>Cert
                 </a>
                 <a href="{{ url_for('reports.download_assessment_excel', assessment_id=a.id) }}" class="btn btn-outline-success" title="Download Excel Workbook">
                   <i class="fa-solid fa-file-excel me-1"></i>Excel
@@ -121,4 +138,3 @@
   </div>
 </div>
 {% endblock %}
-

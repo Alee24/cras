@@ -145,6 +145,7 @@ class AssessmentEvidence(db.Model):
 
     requirement = db.relationship("RegulatoryRequirement", lazy="joined")
     uploaded_by = db.relationship("User", lazy="joined")
+    organization = db.relationship("Organization", lazy="joined")
 
     def __repr__(self):
         return f"<AssessmentEvidence {self.original_filename} req={self.requirement_id}>"
