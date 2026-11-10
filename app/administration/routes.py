@@ -1,5 +1,5 @@
 import json
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
 from flask_login import login_required, current_user
 from app.models.base import db
 from app.models.auth import Role, User
@@ -8,6 +8,7 @@ from app.models.regulatory import RegulatoryDomain, RegulatoryCategory, Regulato
 from app.models.scoring import ScoringPolicy, ScoringPolicyVersion
 from app.models.audit_and_notification import AuditLog, SystemSetting
 from app.services.audit_service import AuditService
+from app.services.live_demo_generator import populate_comprehensive_live_data
 from app.utils.decorators import super_admin_required, get_active_organization
 
 admin_bp = Blueprint("administration", __name__, url_prefix="/admin")
@@ -153,4 +154,33 @@ def settings():
         lockout_attempts=lockout_attempts,
         lockout_minutes=lockout_minutes,
     )
+
+
+@admin_bp.route("/populate-demo-data", methods=["POST"])
+@login_required
+@super_admin_required
+def populate_demo_data():
+    upload_folder = current_app.config.get("UPLOAD_FOLDER")
+    stats = populate_comprehensive_live_data(upload_folder=upload_folder)
+
+    AuditService.log(
+        "POPULATE_LIVE_DEMO_DATA",
+        "System",
+        None,
+        {
+            "organizations": stats["organizations"],
+            "assessments": stats["assessments"],
+            "gaps": stats["gaps"],
+            "actions": stats["actions"],
+            "calendar_events": stats["calendar_events"],
+            "evidence_files": stats["evidence_files"],
+        },
+    )
+
+    flash(
+        f"Live demonstration data successfully populated! {stats['organizations']} Kenyan SMEs refreshed with {stats['assessments']} multi-quarter assessments, {stats['gaps']} compliance gaps, {stats['actions']} corrective actions, {stats['calendar_events']} calendar deadlines, and {stats['evidence_files']} evidence files.",
+        "success",
+    )
+    return redirect(url_for("administration.settings"))
+
 

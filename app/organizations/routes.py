@@ -1,9 +1,10 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
 from flask_login import login_required, current_user
 from app.models.base import db
 from app.models.auth import Role
 from app.models.organization import Organization, Department, OrganizationUser
 from app.services.audit_service import AuditService
+from app.services.live_demo_generator import populate_comprehensive_live_data
 from app.utils.decorators import get_active_organization, roles_required
 
 organizations_bp = Blueprint("organizations", __name__, url_prefix="/organizations")
@@ -78,4 +79,18 @@ def departments():
 
     departments_list = Department.query.filter_by(organization_id=org.id).all()
     return render_template("organizations/departments.html", org=org, departments=departments_list)
+
+
+@organizations_bp.route("/populate-demo-data", methods=["POST"])
+@login_required
+@roles_required(Role.ORG_ADMIN)
+def populate_demo_data():
+    upload_folder = current_app.config.get("UPLOAD_FOLDER")
+    stats = populate_comprehensive_live_data(upload_folder=upload_folder)
+    flash(
+        f"Live demonstration data successfully populated! {stats['organizations']} Kenyan SME companies refreshed with {stats['assessments']} assessments, {stats['gaps']} compliance gaps, {stats['actions']} actions, and statutory records.",
+        "success",
+    )
+    return redirect(url_for("organizations.profile"))
+
 

@@ -204,6 +204,14 @@ def create_app(config_name=None):
         seed_synthetic_smes()
         print("Synthetic SMEs seeded.")
 
+    @app.cli.command("populate-live-data")
+    def populate_live_data_cmd():
+        """Populates rich live demonstration data across all Kenyan SME scenarios."""
+        from app.services.live_demo_generator import populate_comprehensive_live_data
+        print("Populating comprehensive Kenyan SME live demonstration data...")
+        stats = populate_comprehensive_live_data(upload_folder=app.config.get("UPLOAD_FOLDER"))
+        print(f"Done! Created/Updated {stats['organizations']} organizations, {stats['assessments']} assessments, {stats['gaps']} gaps, {stats['actions']} actions, {stats['calendar_events']} calendar events, and {stats['evidence_files']} evidence files.")
+
     @app.cli.command("create-admin")
     def create_admin_cmd():
         """Creates the initial super administrator account from configuration."""
