@@ -167,6 +167,17 @@ def create_app(config_name=None):
         cls = badges.get(status, "bg-secondary")
         return Markup(f'<span class="badge {cls}">{status.replace("_", " ")}</span>')
 
+    @app.template_filter("severity_badge")
+    def severity_badge_filter(severity):
+        badges = {
+            "CRITICAL": "bg-danger text-white",
+            "HIGH": "bg-danger-subtle text-danger border border-danger-subtle",
+            "MEDIUM": "bg-warning-subtle text-warning-emphasis border border-warning-subtle",
+            "LOW": "bg-info-subtle text-info border border-info-subtle",
+        }
+        cls = badges.get(severity, "bg-secondary")
+        return Markup(f'<span class="badge {cls}">{severity}</span>')
+
     @app.template_filter("rag_badge")
     def rag_badge_filter(classification):
         if classification == "COMPLIANT":

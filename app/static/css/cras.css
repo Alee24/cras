@@ -190,6 +190,16 @@ body {
   box-shadow: 0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -1px rgba(0,0,0,0.04);
 }
 
+.hover-elevate {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+
+.hover-elevate:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1) !important;
+}
+
 .card-header {
   background: transparent;
   border-bottom: 1px solid var(--cras-border);

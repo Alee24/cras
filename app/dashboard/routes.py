@@ -1,10 +1,11 @@
 from datetime import date
 from flask import Blueprint, render_template, request, session, redirect, url_for
 from flask_login import login_required, current_user
+from sqlalchemy.orm import joinedload
 from app.models.base import db
 from app.models.assessment import ComplianceAssessment, AssessmentDomainScore, AssessmentResponse
 from app.models.compliance_management import ComplianceGap, CorrectiveAction, ComplianceDeadline
-from app.models.regulatory import RegulatoryDomain
+from app.models.regulatory import RegulatoryDomain, RegulatoryRequirement
 from app.utils.decorators import get_active_organization
 
 dashboard_bp = Blueprint("dashboard", __name__, url_prefix="/dashboard")
@@ -47,6 +48,8 @@ def index():
     partially_compliant_count = 0
     non_compliant_count = 0
     not_applicable_count = 0
+    partially_compliant_items = []
+    gaps_by_req_id = {}
 
     if latest_assessment:
         overall_score = latest_assessment.overall_score or 0.0
@@ -58,6 +61,23 @@ def index():
         not_applicable_count = latest_assessment.not_applicable_count
 
         domain_scores = AssessmentDomainScore.query.filter_by(assessment_id=latest_assessment.id).all()
+
+        partially_compliant_items = (
+            AssessmentResponse.query
+            .options(
+                joinedload(AssessmentResponse.requirement).joinedload(RegulatoryRequirement.domain),
+                joinedload(AssessmentResponse.requirement).joinedload(RegulatoryRequirement.category)
+            )
+            .filter_by(
+                assessment_id=latest_assessment.id,
+                response_value=AssessmentResponse.RESPONSE_PARTIALLY_COMPLIANT
+            )
+            .order_by(AssessmentResponse.requirement_id.asc())
+            .all()
+        )
+
+        assessment_gaps = ComplianceGap.query.filter_by(assessment_id=latest_assessment.id).all()
+        gaps_by_req_id = {g.requirement_id: g for g in assessment_gaps}
 
     # Pending Assessments count
     pending_assessments_count = ComplianceAssessment.query.filter_by(
@@ -125,5 +145,7 @@ def index():
         trend_scores=trend_scores,
         available_periods=available_periods,
         current_period=period_filter,
+        partially_compliant_items=partially_compliant_items,
+        gaps_by_req_id=gaps_by_req_id,
     )
 

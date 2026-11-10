@@ -42,11 +42,11 @@
   </div>
 </div>
 
-<!-- 8 Key Performance Indicator Cards -->
-<div class="row g-3 mb-4">
+<!-- Key Performance Indicator Cards (5 Columns) -->
+<div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-5 g-3 mb-4">
   <!-- 1. Overall Compliance Score -->
-  <div class="col-sm-6 col-xl-3">
-    <div class="card metric-card h-100">
+  <div class="col">
+    <div class="card metric-card h-100 shadow-sm border-start border-primary border-3">
       <div>
         <div class="metric-label">Compliance Score</div>
         <div class="metric-value {{ overall_score|score_color }}">
@@ -61,8 +61,8 @@
   </div>
 
   <!-- 2. Compliant Obligations -->
-  <div class="col-sm-6 col-xl-3">
-    <div class="card metric-card h-100">
+  <div class="col">
+    <div class="card metric-card h-100 shadow-sm border-start border-success border-3">
       <div>
         <div class="metric-label">Compliant Items</div>
         <div class="metric-value text-success">
@@ -76,15 +76,36 @@
     </div>
   </div>
 
-  <!-- 3. Non-Compliant / Gaps -->
-  <div class="col-sm-6 col-xl-3">
-    <div class="card metric-card h-100">
+  <!-- 3. Partially Compliant Items -->
+  <div class="col">
+    <a href="#partiallyCompliantSection" class="text-decoration-none text-reset">
+      <div class="card metric-card h-100 shadow-sm border-start border-warning border-3 hover-elevate">
+        <div>
+          <div class="metric-label text-warning d-flex align-items-center gap-1">
+            Partially Compliant
+            <i class="fa-solid fa-arrow-down-long text-warning" style="font-size: 0.65rem;"></i>
+          </div>
+          <div class="metric-value text-warning">
+            {{ partially_compliant_count }}
+          </div>
+          <div class="small text-muted mt-1">Remediation required</div>
+        </div>
+        <div class="metric-icon-box bg-warning-subtle text-warning">
+          <i class="fa-solid fa-circle-half-stroke"></i>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <!-- 4. Non-Compliant Items -->
+  <div class="col">
+    <div class="card metric-card h-100 shadow-sm border-start border-danger border-3">
       <div>
         <div class="metric-label">Non-Compliant Items</div>
         <div class="metric-value text-danger">
           {{ non_compliant_count }}
         </div>
-        <div class="small text-muted mt-1">+{{ partially_compliant_count }} partial</div>
+        <div class="small text-muted mt-1">Critical compliance gaps</div>
       </div>
       <div class="metric-icon-box bg-danger-subtle text-danger">
         <i class="fa-solid fa-triangle-exclamation"></i>
@@ -92,20 +113,22 @@
     </div>
   </div>
 
-  <!-- 4. Open Corrective Actions -->
-  <div class="col-sm-6 col-xl-3">
-    <div class="card metric-card h-100">
-      <div>
-        <div class="metric-label">Open Actions</div>
-        <div class="metric-value text-warning">
-          {{ open_actions_count }}
+  <!-- 5. Open Corrective Actions -->
+  <div class="col">
+    <a href="{{ url_for('corrective_actions.index') }}" class="text-decoration-none text-reset">
+      <div class="card metric-card h-100 shadow-sm border-start border-info border-3 hover-elevate">
+        <div>
+          <div class="metric-label">Open Actions</div>
+          <div class="metric-value text-primary">
+            {{ open_actions_count }}
+          </div>
+          <div class="small text-muted mt-1">{{ open_gaps_count }} active gaps</div>
         </div>
-        <div class="small text-muted mt-1">{{ open_gaps_count }} active gaps</div>
+        <div class="metric-icon-box bg-info-subtle text-info">
+          <i class="fa-solid fa-list-check"></i>
+        </div>
       </div>
-      <div class="metric-icon-box bg-warning-subtle text-warning">
-        <i class="fa-solid fa-list-check"></i>
-      </div>
-    </div>
+    </a>
   </div>
 </div>
 
@@ -135,8 +158,10 @@
               <div class="text-muted" style="font-size: 0.72rem;">Compliant</div>
             </div>
             <div class="col-4">
-              <div class="fw-bold text-warning">{{ partially_compliant_count }}</div>
-              <div class="text-muted" style="font-size: 0.72rem;">Partial</div>
+              <a href="#partiallyCompliantSection" class="text-decoration-none text-reset">
+                <div class="fw-bold text-warning">{{ partially_compliant_count }}</div>
+                <div class="text-muted" style="font-size: 0.72rem;">Partial <i class="fa-solid fa-arrow-down-long text-warning" style="font-size: 0.6rem;"></i></div>
+              </a>
             </div>
             <div class="col-4">
               <div class="fw-bold text-danger">{{ non_compliant_count }}</div>
@@ -172,6 +197,142 @@
         </div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- Partially Compliant Obligations Section -->
+<div class="card shadow-sm mb-4" id="partiallyCompliantSection">
+  <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 py-3 bg-white">
+    <div class="d-flex align-items-center gap-3">
+      <div class="metric-icon-box bg-warning-subtle text-warning" style="width: 40px; height: 40px; font-size: 1.2rem;">
+        <i class="fa-solid fa-circle-half-stroke"></i>
+      </div>
+      <div>
+        <div class="d-flex align-items-center gap-2">
+          <h5 class="fw-bold mb-0 text-primary">Partially Compliant Obligations</h5>
+          <span class="badge bg-warning text-dark fw-bold rounded-pill px-2 py-1">{{ partially_compliant_count }} Items</span>
+        </div>
+        <div class="small text-muted">Statutory requirements with partial adherence (50% scoring credit) requiring active remediation</div>
+      </div>
+    </div>
+
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <!-- Search filter input -->
+      <div class="input-group input-group-sm" style="max-width: 220px;">
+        <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+        <input type="text" id="partialSearchInput" class="form-control border-start-0" placeholder="Filter obligations..." onkeyup="filterPartialTable()">
+      </div>
+
+      <!-- Domain filter dropdown -->
+      <select id="partialDomainFilter" class="form-select form-select-sm" style="max-width: 190px;" onchange="filterPartialTable()">
+        <option value="">All Domains</option>
+        {% for ds in domain_scores %}
+        <option value="{{ ds.domain.code }}">{{ ds.domain.title }}</option>
+        {% endfor %}
+      </select>
+
+      {% if latest_assessment %}
+      <a href="{{ url_for('assessments.view_assessment', assessment_id=latest_assessment.id) }}" class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1 text-nowrap">
+        <i class="fa-solid fa-file-invoice"></i> Assessment Details
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card-body p-0">
+    {% if partially_compliant_items and partially_compliant_items|length > 0 %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0" id="partialTable">
+        <thead class="table-light text-uppercase small text-muted" style="font-size: 0.72rem; letter-spacing: 0.5px;">
+          <tr>
+            <th style="width: 100px;" class="ps-3">Code</th>
+            <th style="min-width: 250px;">Statutory Obligation & Legal Reference</th>
+            <th style="min-width: 160px;">Regulatory Domain</th>
+            <th style="min-width: 240px;">Assessment Observation</th>
+            <th style="min-width: 150px;">Remediation & Gap</th>
+            <th style="width: 110px;" class="text-end pe-3">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in partially_compliant_items %}
+          {% set gap = gaps_by_req_id.get(item.requirement_id) %}
+          <tr data-domain="{{ item.requirement.domain.code }}" data-text="{{ item.requirement.code }} {{ item.requirement.title }} {{ item.requirement.legal_reference }} {{ item.notes or '' }}">
+            <!-- Code -->
+            <td class="ps-3">
+              <span class="badge bg-light text-dark border font-monospace fw-bold">{{ item.requirement.code }}</span>
+            </td>
+
+            <!-- Obligation & Legal Reference -->
+            <td>
+              <div class="fw-semibold text-dark">{{ item.requirement.title }}</div>
+              <div class="text-muted small" style="font-size: 0.75rem;">
+                <i class="fa-solid fa-scale-balanced me-1 text-secondary"></i>{{ item.requirement.legal_reference }}
+              </div>
+            </td>
+
+            <!-- Regulatory Domain -->
+            <td>
+              <span class="badge bg-light text-primary border">
+                <i class="fa-solid {{ item.requirement.domain.icon or 'fa-shield-halved' }} me-1"></i>{{ item.requirement.domain.title }}
+              </span>
+            </td>
+
+            <!-- Assessment Observation -->
+            <td>
+              <div class="small text-secondary">
+                {% if item.notes %}
+                  <i class="fa-regular fa-comment-dots me-1 text-muted"></i>{{ item.notes }}
+                {% else %}
+                  <span class="text-muted fst-italic">Partial adherence recorded during review.</span>
+                {% endif %}
+              </div>
+            </td>
+
+            <!-- Remediation & Gap -->
+            <td>
+              {% if gap %}
+                <div class="d-flex align-items-center gap-1 mb-1">
+                  {{ gap.severity|severity_badge }}
+                  {{ gap.status|status_badge }}
+                </div>
+                {% if gap.actions and gap.actions|length > 0 %}
+                <span class="text-muted" style="font-size: 0.72rem;">
+                  <i class="fa-solid fa-list-check me-1 text-primary"></i>{{ gap.actions|length }} action plan(s)
+                </span>
+                {% endif %}
+              {% else %}
+                <span class="badge bg-warning-subtle text-warning border">Partial Adherence</span>
+              {% endif %}
+            </td>
+
+            <!-- Action Button -->
+            <td class="text-end pe-3">
+              {% if gap %}
+              <a href="{{ url_for('compliance_gaps.view_gap', gap_id=gap.id) }}" class="btn btn-sm btn-outline-warning text-dark fw-semibold text-nowrap shadow-sm" title="Remediate Compliance Gap">
+                <i class="fa-solid fa-arrow-up-right-from-square me-1"></i>Remediate
+              </a>
+              {% elif latest_assessment %}
+              <a href="{{ url_for('assessments.view_assessment', assessment_id=latest_assessment.id) }}" class="btn btn-sm btn-outline-secondary text-nowrap shadow-sm">
+                <i class="fa-solid fa-eye me-1"></i>Review
+              </a>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+      <div class="mb-2">
+        <i class="fa-solid fa-circle-check text-success fa-3x"></i>
+      </div>
+      <h6 class="fw-bold text-dark mb-1">No Partially Compliant Obligations</h6>
+      <p class="small text-muted mb-0">
+        All evaluated statutory obligations are either fully compliant or have no partial adherence findings for this period.
+      </p>
+    </div>
+    {% endif %}
   </div>
 </div>
 
@@ -341,6 +502,22 @@
         }
       });
     }
+
+    // 4. Client-side Live Filtering for Partially Compliant Obligations
+    window.filterPartialTable = function() {
+      const search = (document.getElementById('partialSearchInput')?.value || '').toLowerCase().trim();
+      const domain = (document.getElementById('partialDomainFilter')?.value || '').trim();
+      const rows = document.querySelectorAll('#partialTable tbody tr');
+
+      rows.forEach(row => {
+        const rowDomain = (row.getAttribute('data-domain') || '').trim();
+        const rowText = (row.getAttribute('data-text') || '').toLowerCase();
+        const matchSearch = !search || rowText.includes(search);
+        const matchDomain = !domain || rowDomain === domain;
+
+        row.style.display = (matchSearch && matchDomain) ? '' : 'none';
+      });
+    };
   });
 </script>
 {% endblock %}
