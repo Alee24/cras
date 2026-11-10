@@ -115,13 +115,20 @@ def test_dashboard_partially_compliant_items_render(client, app):
         assert resp.status_code == 200
         html = resp.data.decode("utf-8")
 
-        # Verify Partially Compliant Metric Card
+        # Verify Partially Compliant & Non-Compliant Metric Cards
         assert "Partially Compliant" in html
         assert "Remediation required" in html
-        assert "#partiallyCompliantSection" in html
+        assert "#remediationSection" in html
+        assert "Non-Compliant Items" in html
 
-        # Verify Partially Compliant Section & Table
-        assert "Partially Compliant Obligations" in html
-        assert "partialTable" in html
-        assert "partialSearchInput" in html
-        assert "partialDomainFilter" in html
+        # Verify Remediation Section, Table, Filters & Pagination
+        assert "Compliance Remediation Obligations" in html
+        assert "remediationTable" in html
+        assert "remediationSearchInput" in html
+        assert "remediationDomainFilter" in html
+        assert "paginationNav" in html
+        assert "paginationSummary" in html
+
+        # Verify Direct Links
+        assert f"/assessments/{assessment.id}" in html
+        assert "/corrective-actions" in html

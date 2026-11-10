@@ -48,7 +48,9 @@ def index():
     partially_compliant_count = 0
     non_compliant_count = 0
     not_applicable_count = 0
+    remediation_items = []
     partially_compliant_items = []
+    non_compliant_items = []
     gaps_by_req_id = {}
 
     if latest_assessment:
@@ -62,21 +64,44 @@ def index():
 
         domain_scores = AssessmentDomainScore.query.filter_by(assessment_id=latest_assessment.id).all()
 
-        partially_compliant_items = (
+        remediation_items = (
             AssessmentResponse.query
             .options(
                 joinedload(AssessmentResponse.requirement).joinedload(RegulatoryRequirement.domain),
                 joinedload(AssessmentResponse.requirement).joinedload(RegulatoryRequirement.category)
             )
-            .filter_by(
-                assessment_id=latest_assessment.id,
-                response_value=AssessmentResponse.RESPONSE_PARTIALLY_COMPLIANT
+            .filter(
+                AssessmentResponse.assessment_id == latest_assessment.id,
+                AssessmentResponse.response_value.in_([
+                    AssessmentResponse.RESPONSE_NON_COMPLIANT,
+                    AssessmentResponse.RESPONSE_PARTIALLY_COMPLIANT,
+                ])
             )
-            .order_by(AssessmentResponse.requirement_id.asc())
+            .order_by(
+                db.case(
+                    (AssessmentResponse.response_value == AssessmentResponse.RESPONSE_NON_COMPLIANT, 1),
+                    else_=2
+                ),
+                AssessmentResponse.requirement_id.asc()
+            )
             .all()
         )
 
-        assessment_gaps = ComplianceGap.query.filter_by(assessment_id=latest_assessment.id).all()
+        partially_compliant_items = [
+            item for item in remediation_items
+            if item.response_value == AssessmentResponse.RESPONSE_PARTIALLY_COMPLIANT
+        ]
+        non_compliant_items = [
+            item for item in remediation_items
+            if item.response_value == AssessmentResponse.RESPONSE_NON_COMPLIANT
+        ]
+
+        assessment_gaps = (
+            ComplianceGap.query
+            .options(joinedload(ComplianceGap.actions))
+            .filter_by(assessment_id=latest_assessment.id)
+            .all()
+        )
         gaps_by_req_id = {g.requirement_id: g for g in assessment_gaps}
 
     # Pending Assessments count
@@ -145,7 +170,9 @@ def index():
         trend_scores=trend_scores,
         available_periods=available_periods,
         current_period=period_filter,
+        remediation_items=remediation_items,
         partially_compliant_items=partially_compliant_items,
+        non_compliant_items=non_compliant_items,
         gaps_by_req_id=gaps_by_req_id,
     )
 
