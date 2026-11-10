@@ -101,6 +101,20 @@
           <i class="fa-solid fa-gear"></i> System Settings
         </a>
         {% endif %}
+
+        <!-- Persistent Sidebar Populate Demo Data Action -->
+        {% if current_user.is_authenticated and (current_user.is_super_admin or current_role_name == 'Organization Admin') %}
+        <div class="px-3 py-3 border-top border-secondary-subtle mt-3">
+          <form method="POST" action="{% if current_user.is_super_admin %}{{ url_for('administration.populate_demo_data') }}{% else %}{{ url_for('organizations.populate_demo_data') }}{% endif %}" onsubmit="return confirm('Populate and refresh all 43 statutory requirements and live demonstration data for all 4 Kenyan accounts?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <input type="hidden" name="next" value="{{ request.url }}"/>
+            <button type="submit" class="btn btn-sm btn-success text-white w-100 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm py-2">
+              <i class="fa-solid fa-database"></i>
+              <span>Populate Demo Data</span>
+            </button>
+          </form>
+        </div>
+        {% endif %}
       </nav>
     </aside>
 
@@ -136,14 +150,14 @@
         </div>
 
         <div class="topbar-right">
-          <!-- Super Admin Quick Load Demo Data Button -->
-          {% if current_user.is_authenticated and current_user.is_super_admin %}
-          <form method="POST" action="{{ url_for('administration.populate_demo_data') }}" class="d-inline" onsubmit="return confirm('Populate and refresh all 43 statutory requirements and live demonstration data for all 4 Kenyan accounts?');">
+          <!-- Quick Load Demo Data Button (Super Admin & Org Admin) -->
+          {% if current_user.is_authenticated and (current_user.is_super_admin or current_role_name == 'Organization Admin') %}
+          <form method="POST" action="{% if current_user.is_super_admin %}{{ url_for('administration.populate_demo_data') }}{% else %}{{ url_for('organizations.populate_demo_data') }}{% endif %}" class="d-inline" onsubmit="return confirm('Populate and refresh all 43 statutory requirements and live demonstration data for all 4 Kenyan accounts?');">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <input type="hidden" name="next" value="{{ request.url }}"/>
-            <button type="submit" class="btn btn-sm btn-outline-success fw-semibold d-flex align-items-center gap-1 shadow-sm" title="Populate/Refresh Live Demo Data">
+            <button type="submit" class="btn btn-sm btn-success text-white fw-bold d-flex align-items-center gap-1 shadow-sm px-2 px-md-3" title="Populate/Refresh Live Demo Data">
               <i class="fa-solid fa-cloud-arrow-down"></i>
-              <span class="d-none d-xl-inline">Load Live Data</span>
+              <span>Populate Data</span>
             </button>
           </form>
           {% endif %}

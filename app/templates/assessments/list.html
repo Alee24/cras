@@ -8,9 +8,20 @@
     <h3 class="fw-bold mb-1 text-primary">Compliance Assessments</h3>
     <p class="text-muted small mb-0">Manage and track statutory compliance evaluations across regulatory domains.</p>
   </div>
-  <a href="{{ url_for('assessments.create_assessment') }}" class="btn btn-primary d-flex align-items-center gap-2 shadow-sm">
-    <i class="fa-solid fa-plus"></i> New Assessment
-  </a>
+  <div class="d-flex align-items-center gap-2">
+    {% if current_user.is_authenticated and (current_user.is_super_admin or current_role_name == 'Organization Admin') %}
+    <form method="POST" action="{% if current_user.is_super_admin %}{{ url_for('administration.populate_demo_data') }}{% else %}{{ url_for('organizations.populate_demo_data') }}{% endif %}" class="d-inline" onsubmit="return confirm('Populate and refresh all 43 statutory requirements and live demonstration data for all 4 Kenyan accounts?');">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <input type="hidden" name="next" value="{{ request.url }}"/>
+      <button type="submit" class="btn btn-outline-success d-flex align-items-center gap-1 shadow-sm text-nowrap fw-semibold">
+        <i class="fa-solid fa-cloud-arrow-down"></i> Populate Demo Data
+      </button>
+    </form>
+    {% endif %}
+    <a href="{{ url_for('assessments.create_assessment') }}" class="btn btn-primary d-flex align-items-center gap-2 shadow-sm">
+      <i class="fa-solid fa-plus"></i> New Assessment
+    </a>
+  </div>
 </div>
 
 <div class="card shadow-sm">
@@ -81,10 +92,21 @@
     <div class="text-center py-5">
       <i class="fa-solid fa-clipboard-list fa-3x text-secondary mb-3"></i>
       <h5>No Assessments Found</h5>
-      <p class="text-muted small mb-3">Initiate your organization's first statutory compliance assessment to calculate compliance scores.</p>
-      <a href="{{ url_for('assessments.create_assessment') }}" class="btn btn-primary btn-sm">
-        <i class="fa-solid fa-plus me-1"></i>Start Assessment
-      </a>
+      <p class="text-muted small mb-3">Initiate your organization's first statutory compliance assessment, or populate the 4 Kenyan SME demo accounts.</p>
+      <div class="d-flex justify-content-center gap-2">
+        {% if current_user.is_authenticated and (current_user.is_super_admin or current_role_name == 'Organization Admin') %}
+        <form method="POST" action="{% if current_user.is_super_admin %}{{ url_for('administration.populate_demo_data') }}{% else %}{{ url_for('organizations.populate_demo_data') }}{% endif %}" onsubmit="return confirm('Populate and refresh all 43 statutory requirements and live demonstration data for all 4 Kenyan accounts?');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <input type="hidden" name="next" value="{{ request.url }}"/>
+          <button type="submit" class="btn btn-success btn-sm fw-semibold">
+            <i class="fa-solid fa-cloud-arrow-down me-1"></i>Populate Demo Data
+          </button>
+        </form>
+        {% endif %}
+        <a href="{{ url_for('assessments.create_assessment') }}" class="btn btn-primary btn-sm">
+          <i class="fa-solid fa-plus me-1"></i>Start Assessment
+        </a>
+      </div>
     </div>
     {% endif %}
   </div>
