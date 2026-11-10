@@ -23,6 +23,15 @@ def create_app(config_name=None):
     app = Flask(__name__)
     app.config.from_object(config_by_name.get(config_name, config_by_name["default"]))
 
+    # Unconditionally guarantee instance & upload directories exist
+    os.makedirs(app.instance_path, exist_ok=True)
+    os.makedirs(app.config.get("UPLOAD_FOLDER", "uploads"), exist_ok=True)
+    db_uri = app.config.get("SQLALCHEMY_DATABASE_URI", "")
+    if db_uri.startswith("sqlite:///"):
+        sqlite_file = db_uri.replace("sqlite:///", "")
+        if sqlite_file != ":memory:":
+            os.makedirs(os.path.dirname(os.path.abspath(sqlite_file)), exist_ok=True)
+
     # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)

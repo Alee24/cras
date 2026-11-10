@@ -7,6 +7,14 @@ from app.models.auth import User, Role, UserRole
 app = create_app(os.environ.get("FLASK_ENV", "default"))
 
 with app.app_context():
+    # Guarantee instance directory exists before database creation
+    os.makedirs(app.instance_path, exist_ok=True)
+    db_uri = app.config.get("SQLALCHEMY_DATABASE_URI", "")
+    if db_uri.startswith("sqlite:///"):
+        sqlite_file = db_uri.replace("sqlite:///", "")
+        if sqlite_file != ":memory:":
+            os.makedirs(os.path.dirname(os.path.abspath(sqlite_file)), exist_ok=True)
+
     db.create_all()
     seed_roles_and_permissions()
     seed_scoring_policy()

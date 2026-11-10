@@ -5,6 +5,10 @@ from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Guarantee instance and uploads directories exist
+(BASE_DIR / "instance").mkdir(parents=True, exist_ok=True)
+(BASE_DIR / "uploads").mkdir(parents=True, exist_ok=True)
+
 # Load .env if present
 load_dotenv(BASE_DIR / ".env")
 
@@ -16,7 +20,8 @@ def get_database_uri() -> str:
       1. DATABASE_URL (SQLite or PostgreSQL)
       2. DB_TYPE / DB_NAME shorthand
       3. Default fallback to local SQLite in instance/cras.db
-    Automatically creates parent directories for SQLite files to prevent 'unable to open database file'.
+    Automatically creates parent directories for SQLite files and normalizes paths as POSIX
+    to prevent 'sqlite3.OperationalError: unable to open database file' on Windows.
     """
     db_url = os.environ.get("DATABASE_URL", "").strip()
 
@@ -24,9 +29,9 @@ def get_database_uri() -> str:
         db_type = os.environ.get("DB_TYPE", "sqlite").strip().lower()
         if db_type == "sqlite":
             db_name = os.environ.get("DB_NAME", "cras.db").strip()
-            instance_dir = BASE_DIR / "instance"
+            instance_dir = (BASE_DIR / "instance").resolve()
             instance_dir.mkdir(parents=True, exist_ok=True)
-            db_url = f"sqlite:///{instance_dir / db_name}"
+            db_url = f"sqlite:///{ (instance_dir / db_name).as_posix() }"
         elif db_type in ("postgres", "postgresql"):
             db_user = os.environ.get("DB_USER", "cras_user")
             db_pass = os.environ.get("DB_PASSWORD", "cras_secure_password_2026")
@@ -35,23 +40,29 @@ def get_database_uri() -> str:
             db_name = os.environ.get("DB_NAME", "cras_db")
             db_url = f"postgresql://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
         else:
-            instance_dir = BASE_DIR / "instance"
+            instance_dir = (BASE_DIR / "instance").resolve()
             instance_dir.mkdir(parents=True, exist_ok=True)
-            db_url = f"sqlite:///{instance_dir / 'cras.db'}"
+            db_url = f"sqlite:///{ (instance_dir / 'cras.db').as_posix() }"
 
     # Normalize Heroku/Render/AWS legacy postgres:// scheme to postgresql://
     if db_url.startswith("postgres://"):
         db_url = db_url.replace("postgres://", "postgresql://", 1)
 
-    # If SQLite file path, ensure parent directory exists
+    # If SQLite file path, ensure parent directory exists and ALWAYS use POSIX slashes
     if db_url.startswith("sqlite:///"):
         raw_path = db_url.replace("sqlite:///", "", 1)
         if raw_path != ":memory:":
             file_path = Path(raw_path)
             if not file_path.is_absolute():
-                file_path = BASE_DIR / raw_path
-                db_url = f"sqlite:///{file_path}"
+                file_path = (BASE_DIR / raw_path).resolve()
+            else:
+                file_path = file_path.resolve()
+            
+            # Ensure folder exists
             file_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Use forward slashes (as_posix) so Windows backslashes never corrupt the URI
+            db_url = f"sqlite:///{file_path.as_posix()}"
 
     return db_url
 
