@@ -29,6 +29,20 @@ def create_app(config_name=None):
     login_manager.init_app(app)
     csrf.init_app(app)
 
+    # SQLite Concurrency & Integrity Optimization (WAL Mode & Foreign Keys)
+    if app.config.get("SQLALCHEMY_DATABASE_URI", "").startswith("sqlite"):
+        from sqlalchemy import event
+        from sqlalchemy.engine import Engine
+
+        @event.listens_for(Engine, "connect")
+        def set_sqlite_pragma(dbapi_connection, connection_record):
+            if type(dbapi_connection).__module__ == "sqlite3":
+                cursor = dbapi_connection.cursor()
+                cursor.execute("PRAGMA foreign_keys=ON")
+                cursor.execute("PRAGMA journal_mode=WAL")
+                cursor.execute("PRAGMA busy_timeout=5000")
+                cursor.close()
+
     login_manager.login_view = "auth.login"
     login_manager.login_message = "Please sign in to access this page."
     login_manager.login_message_category = "info"

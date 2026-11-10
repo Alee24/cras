@@ -23,20 +23,18 @@ services:
       dockerfile: Dockerfile
     container_name: cras_web
     restart: always
-    depends_on:
-      postgres:
-        condition: service_healthy
     environment:
       FLASK_ENV: production
       DEBUG: "False"
       SECRET_KEY: ${SECRET_KEY:-change-this-in-production-to-a-very-secure-random-key}
-      DATABASE_URL: postgresql://${POSTGRES_USER:-cras_user}:${POSTGRES_PASSWORD:-cras_secure_password_2026}@postgres:5432/${POSTGRES_DB:-cras_db}
+      DATABASE_URL: ${DATABASE_URL:-sqlite:////app/instance/cras.db}
       UPLOAD_FOLDER: /app/uploads
       INITIAL_ADMIN_EMAIL: ${INITIAL_ADMIN_EMAIL:-admin@cras.ke}
       INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD:-Admin@CRAS2026!}
       INITIAL_ADMIN_NAME: ${INITIAL_ADMIN_NAME:-System Administrator}
     volumes:
       - uploads_data:/app/uploads
+      - instance_data:/app/instance
     networks:
       - cras_network
 
@@ -62,4 +60,5 @@ networks:
 volumes:
   postgres_data:
   uploads_data:
+  instance_data:
 
