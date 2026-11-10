@@ -181,6 +181,7 @@ def populate_demo_data():
         f"Live demonstration data successfully populated! {stats['organizations']} Kenyan SMEs refreshed with {stats['assessments']} multi-quarter assessments, {stats['gaps']} compliance gaps, {stats['actions']} corrective actions, {stats['calendar_events']} calendar deadlines, and {stats['evidence_files']} evidence files.",
         "success",
     )
-    return redirect(url_for("administration.settings"))
+    next_url = request.form.get("next") or request.referrer or url_for("administration.settings")
+    return redirect(next_url)
 
 

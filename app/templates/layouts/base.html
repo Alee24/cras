@@ -136,6 +136,18 @@
         </div>
 
         <div class="topbar-right">
+          <!-- Super Admin Quick Load Demo Data Button -->
+          {% if current_user.is_authenticated and current_user.is_super_admin %}
+          <form method="POST" action="{{ url_for('administration.populate_demo_data') }}" class="d-inline" onsubmit="return confirm('Populate and refresh all 43 statutory requirements and live demonstration data for all 4 Kenyan accounts?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <input type="hidden" name="next" value="{{ request.url }}"/>
+            <button type="submit" class="btn btn-sm btn-outline-success fw-semibold d-flex align-items-center gap-1 shadow-sm" title="Populate/Refresh Live Demo Data">
+              <i class="fa-solid fa-cloud-arrow-down"></i>
+              <span class="d-none d-xl-inline">Load Live Data</span>
+            </button>
+          </form>
+          {% endif %}
+
           <!-- Notification Bell -->
           <a href="{{ url_for('notifications.index') }}" class="btn btn-light position-relative p-2 border rounded-circle">
             <i class="fa-solid fa-bell text-secondary"></i>

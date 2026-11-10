@@ -18,6 +18,7 @@ python -c "
 from wsgi import app
 print('CRAS schema initialized and statutory content verified.')
 "
+flask populate-live-data
 
 echo "Executing entrypoint CMD: $@"
 exec "$@"

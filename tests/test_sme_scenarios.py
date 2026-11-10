@@ -28,20 +28,26 @@ def test_scenario_1_apex_logistics_high_compliance(app):
     """
     with app.app_context():
         version = ScoringPolicyVersion.query.filter_by(is_active=True).first()
-        org = Organization(
-            name="Apex Logistics Solutions Ltd",
-            business_registration_number="CPR/2020/88123",
-            kra_pin="P051992233M",
-            industry_sector="Transport & Logistics",
-            business_type="Private Limited Company",
-            organization_size="Small (10-49)",
-            employee_count=35,
-            county="Nairobi",
-            contact_email="compliance@apexlogistics.co.ke",
-        )
-        user = User(email="admin@apexlogistics.co.ke", full_name="Grace Mwangi")
-        user.set_password("ApexSecurePass2026!")
-        db.session.add_all([org, user])
+        org = Organization.query.filter_by(kra_pin="P051992233M").first()
+        if not org:
+            org = Organization(
+                name="Apex Logistics Solutions Ltd",
+                business_registration_number="CPR/2020/88123",
+                kra_pin="P051992233M",
+                industry_sector="Transport & Logistics",
+                business_type="Private Limited Company",
+                organization_size="Small (10-49)",
+                employee_count=35,
+                county="Nairobi",
+                contact_email="compliance@apexlogistics.co.ke",
+            )
+            db.session.add(org)
+
+        user = User.query.filter_by(email="admin@apexlogistics.co.ke").first()
+        if not user:
+            user = User(email="admin@apexlogistics.co.ke", full_name="Grace Mwangi")
+            user.set_password("ApexSecurePass2026!")
+            db.session.add(user)
         db.session.flush()
 
         assessment = ComplianceAssessment(
@@ -98,20 +104,26 @@ def test_scenario_2_kilimani_health_moderate_risk(app):
     """
     with app.app_context():
         version = ScoringPolicyVersion.query.filter_by(is_active=True).first()
-        org = Organization(
-            name="Kilimani Digital Health Clinic",
-            business_registration_number="CPR/2022/44112",
-            kra_pin="P052441122H",
-            industry_sector="Healthcare & Pharmaceuticals",
-            business_type="Private Limited Company",
-            organization_size="Small (10-49)",
-            employee_count=22,
-            county="Nairobi",
-            contact_email="admin@kilimanihealth.co.ke",
-        )
-        user = User(email="dr.otieno@kilimanihealth.co.ke", full_name="Dr. Brian Otieno")
-        user.set_password("HealthClinic2026!")
-        db.session.add_all([org, user])
+        org = Organization.query.filter_by(kra_pin="P052441122H").first()
+        if not org:
+            org = Organization(
+                name="Kilimani Digital Health Clinic",
+                business_registration_number="CPR/2022/44112",
+                kra_pin="P052441122H",
+                industry_sector="Healthcare & Pharmaceuticals",
+                business_type="Private Limited Company",
+                organization_size="Small (10-49)",
+                employee_count=22,
+                county="Nairobi",
+                contact_email="admin@kilimanihealth.co.ke",
+            )
+            db.session.add(org)
+
+        user = User.query.filter_by(email="dr.otieno@kilimanihealth.co.ke").first()
+        if not user:
+            user = User(email="dr.otieno@kilimanihealth.co.ke", full_name="Dr. Brian Otieno")
+            user.set_password("HealthClinic2026!")
+            db.session.add(user)
         db.session.flush()
 
         assessment = ComplianceAssessment(
@@ -187,20 +199,26 @@ def test_scenario_3_rift_valley_produce_high_risk(app):
     """
     with app.app_context():
         version = ScoringPolicyVersion.query.filter_by(is_active=True).first()
-        org = Organization(
-            name="Rift Valley Fresh Produce Ltd",
-            business_registration_number="CPR/2019/33221",
-            kra_pin="P051332211A",
-            industry_sector="Agriculture & Agribusiness",
-            business_type="Private Limited Company",
-            organization_size="Small (10-49)",
-            employee_count=45,
-            county="Nakuru",
-            contact_email="info@riftvalleyproduce.co.ke",
-        )
-        user = User(email="manager@riftvalleyproduce.co.ke", full_name="Kiprono Koech")
-        user.set_password("AgroProduce2026!")
-        db.session.add_all([org, user])
+        org = Organization.query.filter_by(kra_pin="P051332211A").first()
+        if not org:
+            org = Organization(
+                name="Rift Valley Fresh Produce Ltd",
+                business_registration_number="CPR/2019/33221",
+                kra_pin="P051332211A",
+                industry_sector="Agriculture & Agribusiness",
+                business_type="Private Limited Company",
+                organization_size="Small (10-49)",
+                employee_count=45,
+                county="Nakuru",
+                contact_email="info@riftvalleyproduce.co.ke",
+            )
+            db.session.add(org)
+
+        user = User.query.filter_by(email="manager@riftvalleyproduce.co.ke").first()
+        if not user:
+            user = User(email="manager@riftvalleyproduce.co.ke", full_name="Kiprono Koech")
+            user.set_password("AgroProduce2026!")
+            db.session.add(user)
         db.session.flush()
 
         assessment = ComplianceAssessment(
@@ -251,19 +269,25 @@ def test_scenario_4_savanna_retail_exact_threshold(app):
     """
     with app.app_context():
         version = ScoringPolicyVersion.query.filter_by(is_active=True).first()
-        org = Organization(
-            name="Savanna Retail Distributors Ltd",
-            business_registration_number="CPR/2023/11099",
-            kra_pin="P053110992R",
-            industry_sector="Retail & Wholesale",
-            business_type="Private Limited Company",
-            employee_count=18,
-            county="Mombasa",
-            contact_email="admin@savannaretail.co.ke",
-        )
-        user = User(email="hassan@savannaretail.co.ke", full_name="Hassan Ali")
-        user.set_password("SavannaRetail2026!")
-        db.session.add_all([org, user])
+        org = Organization.query.filter_by(kra_pin="P053110992R").first()
+        if not org:
+            org = Organization(
+                name="Savanna Retail Distributors Ltd",
+                business_registration_number="CPR/2023/11099",
+                kra_pin="P053110992R",
+                industry_sector="Retail & Wholesale",
+                business_type="Private Limited Company",
+                employee_count=18,
+                county="Mombasa",
+                contact_email="admin@savannaretail.co.ke",
+            )
+            db.session.add(org)
+
+        user = User.query.filter_by(email="hassan@savannaretail.co.ke").first()
+        if not user:
+            user = User(email="hassan@savannaretail.co.ke", full_name="Hassan Ali")
+            user.set_password("SavannaRetail2026!")
+            db.session.add(user)
         db.session.flush()
 
         assessment = ComplianceAssessment(

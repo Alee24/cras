@@ -8,9 +8,18 @@
     <h3 class="fw-bold mb-1 text-primary">Regulatory Content Management</h3>
     <p class="text-muted small mb-0">Maintain statutory compliance checklists, risk weights, legal citations, and question banks without codebase edits.</p>
   </div>
-  <a href="{{ url_for('administration.index') }}" class="btn btn-sm btn-outline-secondary">
-    <i class="fa-solid fa-arrow-left me-1"></i>Back to Admin Console
-  </a>
+  <div class="d-flex align-items-center gap-2">
+    <form method="POST" action="{{ url_for('administration.populate_demo_data') }}" class="d-inline" onsubmit="return confirm('Populate and refresh all 43 statutory requirements and live demonstration data for all 4 Kenyan accounts?');">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <input type="hidden" name="next" value="{{ request.url }}"/>
+      <button type="submit" class="btn btn-sm btn-success fw-semibold shadow-sm">
+        <i class="fa-solid fa-cloud-arrow-down me-1"></i>Load All Regulatory & Demo Data
+      </button>
+    </form>
+    <a href="{{ url_for('administration.index') }}" class="btn btn-sm btn-outline-secondary">
+      <i class="fa-solid fa-arrow-left me-1"></i>Back to Admin Console
+    </a>
+  </div>
 </div>
 
 <div class="card shadow-sm mb-4">

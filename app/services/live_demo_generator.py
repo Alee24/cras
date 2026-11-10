@@ -77,6 +77,8 @@ def ensure_sample_evidence_files(upload_dir_str: str) -> dict:
 def populate_comprehensive_live_data(upload_folder: str = "uploads") -> dict:
     """
     Populates full-fidelity, multi-period demonstration data across all regulatory domains:
+    - Creates database tables if not existing.
+    - Seeds all 43 statutory requirements, categories, and domains.
     - 4 Kenyan SME companies with rich profiles and departments.
     - Multiple team members per company (Admin, Compliance Officer, Finance Manager, HR Manager).
     - Multi-quarter assessment progression (2025 Q3, 2025 Q4, 2026 Q1, 2026 Q2).
@@ -86,6 +88,7 @@ def populate_comprehensive_live_data(upload_folder: str = "uploads") -> dict:
     - Verified sample evidence records in the evidence vault.
     - In-app alerts and security audit logs.
     """
+    db.create_all()
     seed_roles_and_permissions()
     policy, version = seed_scoring_policy()
     seed_regulatory_content()
@@ -95,6 +98,12 @@ def populate_comprehensive_live_data(upload_folder: str = "uploads") -> dict:
     finance_role = Role.query.filter_by(name=Role.FINANCE_MANAGER).first()
     hr_role = Role.query.filter_by(name=Role.HR_MANAGER).first()
     auditor_role = Role.query.filter_by(name=Role.AUDITOR).first()
+    super_role = Role.query.filter_by(name=Role.SUPER_ADMIN).first()
+
+    # Find or identify Super Admin user
+    super_admin_user = User.query.filter_by(email="admin@cras.ke").first()
+    if not super_admin_user and super_role:
+        super_admin_user = User.query.join(UserRole).filter(UserRole.role_id == super_role.id).first()
 
     all_reqs = RegulatoryRequirement.query.filter_by(is_active=True).order_by(RegulatoryRequirement.code).all()
     evidence_files = ensure_sample_evidence_files(upload_folder)
@@ -292,6 +301,19 @@ def populate_comprehensive_live_data(upload_folder: str = "uploads") -> dict:
 
             company_users.append(user)
 
+        # Ensure Super Admin has membership so switching works seamlessly
+        if super_admin_user:
+            sa_membership = OrganizationUser.query.filter_by(organization_id=org.id, user_id=super_admin_user.id).first()
+            if not sa_membership:
+                sa_membership = OrganizationUser(
+                    organization_id=org.id,
+                    user_id=super_admin_user.id,
+                    role_id=org_admin_role.id,
+                    department_id=depts_map.get("Executive Management", list(depts_map.values())[0]).id,
+                    is_primary=False,
+                )
+                db.session.add(sa_membership)
+
         lead_user = company_users[0]
         compliance_user = company_users[1] if len(company_users) > 1 else lead_user
         finance_user = company_users[2] if len(company_users) > 2 else lead_user
@@ -338,39 +360,42 @@ def populate_comprehensive_live_data(upload_folder: str = "uploads") -> dict:
                 db.session.flush()
                 total_assessments_created += 1
 
-                # Generate responses to closely reflect target_score_ratio
-                # If target is 1.0 -> all compliant
-                # If target is 0.65 -> ~65% compliant, ~15% partial, ~20% non-compliant
-                # If target is 0.25 -> ~15% compliant, ~20% partial, ~65% non-compliant
-                for r_idx, req in enumerate(all_reqs):
-                    # Deterministic hash for variety across requirements
-                    seed_val = (r_idx * 17 + int(target_score_ratio * 100)) % 100
-                    threshold_comp = int(target_score_ratio * 85)
-                    threshold_part = threshold_comp + 20
+            # Ensure all statutory requirements have responses
+            existing_resp_req_ids = {
+                r.requirement_id for r in AssessmentResponse.query.filter_by(assessment_id=assessment.id).all()
+            }
 
-                    if seed_val < threshold_comp:
-                        resp_val = AssessmentResponse.RESPONSE_COMPLIANT
-                        notes = "Verified against registered documentation."
-                    elif seed_val < threshold_part:
-                        resp_val = AssessmentResponse.RESPONSE_PARTIALLY_COMPLIANT
-                        notes = "Partially implemented; workflow revision ongoing."
-                    else:
-                        resp_val = AssessmentResponse.RESPONSE_NON_COMPLIANT
-                        notes = "Gap identified; remediation required."
+            for r_idx, req in enumerate(all_reqs):
+                if req.id in existing_resp_req_ids:
+                    continue
 
-                    resp = AssessmentResponse(
-                        assessment_id=assessment.id,
-                        requirement_id=req.id,
-                        response_value=resp_val,
-                        notes=notes,
-                        updated_by_id=compliance_user.id,
-                    )
-                    db.session.add(resp)
+                seed_val = (r_idx * 17 + int(target_score_ratio * 100)) % 100
+                threshold_comp = int(target_score_ratio * 85)
+                threshold_part = threshold_comp + 20
 
-                db.session.flush()
-                ScoringEngine.apply_and_persist_scores(assessment, version)
-                gaps_cnt = ComplianceGapService.sync_gaps_for_assessment(assessment)
-                total_gaps_created += gaps_cnt
+                if seed_val < threshold_comp:
+                    resp_val = AssessmentResponse.RESPONSE_COMPLIANT
+                    notes = "Verified against registered documentation."
+                elif seed_val < threshold_part:
+                    resp_val = AssessmentResponse.RESPONSE_PARTIALLY_COMPLIANT
+                    notes = "Partially implemented; workflow revision ongoing."
+                else:
+                    resp_val = AssessmentResponse.RESPONSE_NON_COMPLIANT
+                    notes = "Gap identified; remediation required."
+
+                resp = AssessmentResponse(
+                    assessment_id=assessment.id,
+                    requirement_id=req.id,
+                    response_value=resp_val,
+                    notes=notes,
+                    updated_by_id=compliance_user.id,
+                )
+                db.session.add(resp)
+
+            db.session.flush()
+            ScoringEngine.apply_and_persist_scores(assessment, version)
+            gaps_cnt = ComplianceGapService.sync_gaps_for_assessment(assessment)
+            total_gaps_created += gaps_cnt
 
         # Attach sample evidence to latest assessment
         latest_assessment = ComplianceAssessment.query.filter_by(organization_id=org.id).order_by(
