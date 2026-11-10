@@ -46,34 +46,36 @@
 <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-5 g-3 mb-4">
   <!-- 1. Overall Compliance Score -->
   <div class="col">
-    <div class="card metric-card h-100 shadow-sm border-start border-primary border-3">
-      <div>
+    {% if latest_assessment %}
+    <a href="{{ url_for('assessments.view_assessment', assessment_id=latest_assessment.id) }}" class="text-decoration-none text-reset" title="View Assessment Details">
+    {% else %}
+    <a href="{{ url_for('assessments.list_assessments') }}" class="text-decoration-none text-reset">
+    {% endif %}
+      <div class="card metric-card h-100 shadow-sm border-start border-primary border-3 hover-elevate">
         <div class="metric-label">Compliance Score</div>
         <div class="metric-value {{ overall_score|score_color }}">
           {{ "%.1f"|format(overall_score) }}%
         </div>
         <div class="small mt-1">{{ risk_classification|rag_badge }}</div>
       </div>
-      <div class="metric-icon-box bg-primary-subtle text-primary">
-        <i class="fa-solid fa-shield-halved"></i>
-      </div>
-    </div>
+    </a>
   </div>
 
   <!-- 2. Compliant Obligations -->
   <div class="col">
-    <div class="card metric-card h-100 shadow-sm border-start border-success border-3">
-      <div>
+    {% if latest_assessment %}
+    <a href="{{ url_for('assessments.view_assessment', assessment_id=latest_assessment.id) }}" class="text-decoration-none text-reset" title="View Assessment Details">
+    {% else %}
+    <a href="{{ url_for('assessments.list_assessments') }}" class="text-decoration-none text-reset">
+    {% endif %}
+      <div class="card metric-card h-100 shadow-sm border-start border-success border-3 hover-elevate">
         <div class="metric-label">Compliant Items</div>
         <div class="metric-value text-success">
           {{ compliant_count }}
         </div>
         <div class="small text-muted mt-1">of {{ total_obligations }} total obligations</div>
       </div>
-      <div class="metric-icon-box bg-success-subtle text-success">
-        <i class="fa-solid fa-circle-check"></i>
-      </div>
-    </div>
+    </a>
   </div>
 
   <!-- 3. Partially Compliant Items -->
@@ -84,56 +86,45 @@
     <a href="{{ url_for('assessments.list_assessments') }}" class="text-decoration-none text-reset">
     {% endif %}
       <div class="card metric-card h-100 shadow-sm border-start border-warning border-3 hover-elevate">
-        <div>
-          <div class="metric-label text-warning">
-            Partially Compliant
-          </div>
-          <div class="metric-value text-warning">
-            {{ partially_compliant_count }}
-          </div>
-          <div class="small text-muted mt-1">Remediation required</div>
+        <div class="metric-label text-warning">
+          Partially Compliant
         </div>
-        <div class="metric-icon-box bg-warning-subtle text-warning">
-          <i class="fa-solid fa-circle-half-stroke"></i>
+        <div class="metric-value text-warning">
+          {{ partially_compliant_count }}
         </div>
+        <div class="small text-muted mt-1">Remediation required</div>
       </div>
     </a>
   </div>
 
   <!-- 4. Non-Compliant Items -->
   <div class="col">
-    <a href="{{ url_for('compliance_gaps.index') }}" class="text-decoration-none text-reset" title="View Compliance Gaps">
+    {% if latest_assessment %}
+    <a href="{{ url_for('assessments.view_assessment', assessment_id=latest_assessment.id) }}" class="text-decoration-none text-reset" title="View Assessment Details">
+    {% else %}
+    <a href="{{ url_for('assessments.list_assessments') }}" class="text-decoration-none text-reset">
+    {% endif %}
       <div class="card metric-card h-100 shadow-sm border-start border-danger border-3 hover-elevate">
-        <div>
-          <div class="metric-label text-danger">
-            Non-Compliant Items
-          </div>
-          <div class="metric-value text-danger">
-            {{ non_compliant_count }}
-          </div>
-          <div class="small text-muted mt-1">Critical compliance gaps</div>
+        <div class="metric-label text-danger">
+          Non-Compliant Items
         </div>
-        <div class="metric-icon-box bg-danger-subtle text-danger">
-          <i class="fa-solid fa-triangle-exclamation"></i>
+        <div class="metric-value text-danger">
+          {{ non_compliant_count }}
         </div>
+        <div class="small text-muted mt-1">Critical compliance gaps</div>
       </div>
     </a>
   </div>
 
   <!-- 5. Open Corrective Actions -->
   <div class="col">
-    <a href="{{ url_for('corrective_actions.index') }}" class="text-decoration-none text-reset">
+    <a href="{{ url_for('corrective_actions.index') }}" class="text-decoration-none text-reset" title="View Corrective Actions">
       <div class="card metric-card h-100 shadow-sm border-start border-info border-3 hover-elevate">
-        <div>
-          <div class="metric-label">Open Actions</div>
-          <div class="metric-value text-primary">
-            {{ open_actions_count }}
-          </div>
-          <div class="small text-muted mt-1">{{ open_gaps_count }} active gaps</div>
+        <div class="metric-label">Open Actions</div>
+        <div class="metric-value text-primary">
+          {{ open_actions_count }}
         </div>
-        <div class="metric-icon-box bg-info-subtle text-info">
-          <i class="fa-solid fa-list-check"></i>
-        </div>
+        <div class="small text-muted mt-1">{{ open_gaps_count }} active gaps</div>
       </div>
     </a>
   </div>

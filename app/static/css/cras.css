@@ -216,8 +216,8 @@ body {
 .metric-card {
   padding: 1.25rem;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .metric-value {

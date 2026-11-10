@@ -119,12 +119,16 @@ def test_dashboard_partially_compliant_items_render(client, app):
         assert "Partially Compliant" in html
         assert "Remediation required" in html
         assert "Non-Compliant Items" in html
+        assert "Critical compliance gaps" in html
+
+        # Verify bottom icon boxes are removed from the metric cards
+        assert "metric-icon-box" not in html
 
         # Verify Compliance Remediation Obligations section is removed from dashboard
         assert "Compliance Remediation Obligations" not in html
         assert "remediationTable" not in html
         assert "remediationSearchInput" not in html
 
-        # Verify Direct Links
+        # Verify Direct Links: Both partially compliant and non-compliant point to assessment details
         assert f"/assessments/{assessment.id}" in html
         assert "/corrective-actions" in html
