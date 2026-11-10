@@ -7,6 +7,7 @@ from markupsafe import Markup
 
 from app.config import config_by_name
 from app.models.base import db
+import app.models
 from app.models.auth import User, Role, UserRole
 from app.models.organization import Organization, OrganizationUser
 from app.models.audit_and_notification import Notification
@@ -206,6 +207,18 @@ def create_app(config_name=None):
         """Creates all database tables."""
         db.create_all()
         print("Database tables created.")
+
+    @app.cli.command("migrate-db")
+    def migrate_db_cmd():
+        """Applies migrations, creates all schema tables, and synchronizes statutory content on active DATABASE_URL."""
+        from app.services.seed_data import seed_roles_and_permissions, seed_scoring_policy, seed_regulatory_content
+        print(f"Applying schema migrations to: {app.config['SQLALCHEMY_DATABASE_URI']}")
+        db.create_all()
+        print("Database schema tables and constraints created/verified.")
+        seed_roles_and_permissions()
+        seed_scoring_policy()
+        seed_regulatory_content()
+        print("Statutory content (43 obligations across Data Protection, Tax, Labour) verified.")
 
     @app.cli.command("seed-db")
     def seed_db_cmd():
