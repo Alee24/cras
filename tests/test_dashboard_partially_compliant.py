@@ -118,16 +118,12 @@ def test_dashboard_partially_compliant_items_render(client, app):
         # Verify Partially Compliant & Non-Compliant Metric Cards
         assert "Partially Compliant" in html
         assert "Remediation required" in html
-        assert "#remediationSection" in html
         assert "Non-Compliant Items" in html
 
-        # Verify Remediation Section, Table, Filters & Pagination
-        assert "Compliance Remediation Obligations" in html
-        assert "remediationTable" in html
-        assert "remediationSearchInput" in html
-        assert "remediationDomainFilter" in html
-        assert "paginationNav" in html
-        assert "paginationSummary" in html
+        # Verify Compliance Remediation Obligations section is removed from dashboard
+        assert "Compliance Remediation Obligations" not in html
+        assert "remediationTable" not in html
+        assert "remediationSearchInput" not in html
 
         # Verify Direct Links
         assert f"/assessments/{assessment.id}" in html
