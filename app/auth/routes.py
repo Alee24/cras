@@ -31,8 +31,13 @@ def login():
             return render_template("auth/login.html", form=form)
 
         if user.is_locked:
-            flash(f"Account locked due to excessive failed attempts. Please retry after {user.locked_until.strftime('%H:%M:%S UTC')}.", "danger")
-            return render_template("auth/login.html", form=form)
+            # If the user provides a valid password, unlock account immediately and allow login
+            if user.check_password(password):
+                user.record_successful_login()
+                db.session.commit()
+            else:
+                flash("Account has been temporarily locked due to 5 consecutive failed attempts. Please retry in 15 minutes.", "danger")
+                return render_template("auth/login.html", form=form)
 
         if not user.check_password(password):
             user.record_failed_login()

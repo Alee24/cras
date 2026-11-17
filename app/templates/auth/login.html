@@ -41,5 +41,43 @@
     New SME? <a href="{{ url_for('auth.register') }}" class="fw-semibold text-primary text-decoration-none">Register your organization</a>
   </p>
 </div>
+
+<div class="mt-4 pt-3 border-top">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <span class="small fw-bold text-dark"><i class="fa-solid fa-bolt text-warning me-1"></i> Quick Demo Logins</span>
+    <span class="badge bg-light text-secondary border">Click to auto-fill</span>
+  </div>
+  <div class="d-grid gap-1">
+    <button type="button" class="btn btn-sm btn-outline-secondary text-start py-1 px-2 d-flex justify-content-between align-items-center" onclick="fillLogin('admin@cras.ke', 'Admin@CRAS2026!')">
+      <span><i class="fa-solid fa-shield-halved text-primary me-1"></i> <b>Super Admin</b></span>
+      <span class="small text-muted font-monospace">admin@cras.ke</span>
+    </button>
+    <button type="button" class="btn btn-sm btn-outline-secondary text-start py-1 px-2 d-flex justify-content-between align-items-center" onclick="fillLogin('dr.otieno@kilimanihealth.co.ke', 'HealthClinic2026!')">
+      <span><i class="fa-solid fa-hospital text-danger me-1"></i> <b>Kilimani Health</b></span>
+      <span class="small text-muted font-monospace">dr.otieno@...</span>
+    </button>
+    <button type="button" class="btn btn-sm btn-outline-secondary text-start py-1 px-2 d-flex justify-content-between align-items-center" onclick="fillLogin('grace@apexlogistics.co.ke', 'ApexSecurePass2026!')">
+      <span><i class="fa-solid fa-truck text-success me-1"></i> <b>Apex Logistics</b></span>
+      <span class="small text-muted font-monospace">grace@...</span>
+    </button>
+    <button type="button" class="btn btn-sm btn-outline-secondary text-start py-1 px-2 d-flex justify-content-between align-items-center" onclick="fillLogin('koech@riftvalleyproduce.co.ke', 'AgroProduce2026!')">
+      <span><i class="fa-solid fa-wheat-awn text-warning me-1"></i> <b>Rift Valley Produce</b></span>
+      <span class="small text-muted font-monospace">koech@...</span>
+    </button>
+    <button type="button" class="btn btn-sm btn-outline-secondary text-start py-1 px-2 d-flex justify-content-between align-items-center" onclick="fillLogin('hassan@savannaretail.co.ke', 'SavannaRetail2026!')">
+      <span><i class="fa-solid fa-store text-info me-1"></i> <b>Savanna Retail</b></span>
+      <span class="small text-muted font-monospace">hassan@...</span>
+    </button>
+  </div>
+</div>
+
+<script>
+function fillLogin(email, password) {
+  var emailField = document.getElementById('email');
+  var passField = document.getElementById('password');
+  if (emailField) emailField.value = email;
+  if (passField) passField.value = password;
+}
+</script>
 {% endblock %}
 
