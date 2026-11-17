@@ -1,3 +1,5 @@
+import calendar as calendar_mod
+from datetime import date
 from app.models.base import db, utcnow
 
 
@@ -111,10 +113,110 @@ class ComplianceDeadline(db.Model):
 
     status = db.Column(db.String(20), default=STATUS_PENDING, nullable=False, index=True)
     completed_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    last_completed_due_date = db.Column(db.Date, nullable=True)
+    completed_cycle_until = db.Column(db.Date, nullable=True)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), default=utcnow, nullable=False)
 
     domain = db.relationship("RegulatoryDomain", lazy="joined")
+
+    def advance_to_next_cycle(self, today=None):
+        """Advances current_due_date to the next recurrence cycle upon completion while setting
+        completed_cycle_until so that the compliance status remains COMPLETED until the current cycle period concludes.
+        """
+        if not today:
+            today = date.today()
+
+        self.last_completed_due_date = self.current_due_date
+        self.completed_at = utcnow()
+        self.status = self.STATUS_COMPLETED
+
+        current_year = self.current_due_date.year
+        current_month = self.current_due_date.month
+        current_day = self.current_due_date.day
+
+        if self.recurrence == self.RECURRENCE_ANNUAL:
+            next_year = current_year + 1
+            try:
+                self.current_due_date = date(next_year, current_month, current_day)
+            except ValueError:
+                self.current_due_date = date(next_year, current_month, 28)
+            # Status remains COMPLETED till the end of the completed year (Dec 31)
+            self.completed_cycle_until = date(current_year, 12, 31)
+
+        elif self.recurrence == self.RECURRENCE_MONTHLY:
+            if current_month == 12:
+                next_year = current_year + 1
+                next_month = 1
+            else:
+                next_year = current_year
+                next_month = current_month + 1
+
+            max_day = calendar_mod.monthrange(next_year, next_month)[1]
+            target_day = min(current_day, max_day)
+            self.current_due_date = date(next_year, next_month, target_day)
+
+            # Status remains COMPLETED till the end of the completed month
+            comp_month_max_day = calendar_mod.monthrange(current_year, current_month)[1]
+            self.completed_cycle_until = date(current_year, current_month, comp_month_max_day)
+
+        elif self.recurrence == self.RECURRENCE_QUARTERLY:
+            new_month = current_month + 3
+            if new_month > 12:
+                next_year = current_year + 1
+                next_month = new_month - 12
+            else:
+                next_year = current_year
+                next_month = new_month
+
+            max_day = calendar_mod.monthrange(next_year, next_month)[1]
+            target_day = min(current_day, max_day)
+            self.current_due_date = date(next_year, next_month, target_day)
+
+            quarter = (current_month - 1) // 3 + 1
+            q_end_month = quarter * 3
+            q_end_day = calendar_mod.monthrange(current_year, q_end_month)[1]
+            self.completed_cycle_until = date(current_year, q_end_month, q_end_day)
+
+        else:
+            self.completed_cycle_until = None
+
+    def reopen_previous_cycle(self, today=None):
+        """Restores deadline to the previous cycle if previously advanced upon completion."""
+        if not today:
+            today = date.today()
+
+        if self.last_completed_due_date:
+            self.current_due_date = self.last_completed_due_date
+            self.last_completed_due_date = None
+
+        self.completed_cycle_until = None
+        self.completed_at = None
+
+        if self.current_due_date < today:
+            self.status = self.STATUS_OVERDUE
+        else:
+            self.status = self.STATUS_PENDING
+
+    def refresh_status_for_date(self, today=None):
+        """Refreshes status based on cycle expiry and current date."""
+        if not today:
+            today = date.today()
+
+        if self.status == self.STATUS_COMPLETED:
+            if self.completed_cycle_until and today > self.completed_cycle_until:
+                # Cycle has concluded; reset status for the new period
+                self.completed_cycle_until = None
+                if today > self.current_due_date:
+                    self.status = self.STATUS_OVERDUE
+                else:
+                    self.status = self.STATUS_PENDING
+        elif self.status == self.STATUS_PENDING:
+            if self.current_due_date < today:
+                self.status = self.STATUS_OVERDUE
+        elif self.status == self.STATUS_OVERDUE:
+            if self.current_due_date >= today:
+                self.status = self.STATUS_PENDING
 
     def __repr__(self):
         return f"<ComplianceDeadline title={self.title} due={self.current_due_date}>"

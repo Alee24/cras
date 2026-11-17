@@ -321,24 +321,41 @@ def populate_comprehensive_live_data(upload_folder: str = "uploads") -> dict:
         # Seed statutory deadlines with rich dates
         seed_statutory_calendar_rules(org.id)
 
-        # Update some deadlines to overdue or completed for live realism
+        # Update deadlines with realistic statutory compliance states
         deadlines = ComplianceDeadline.query.filter_by(organization_id=org.id).all()
-        for d_idx, dl in enumerate(deadlines):
-            if d_idx == 0: # Monthly PAYE - Overdue for high-risk / moderate companies
-                if c_idx in [1, 2]:
-                    dl.current_due_date = date.today() - timedelta(days=4)
-                    dl.status = ComplianceDeadline.STATUS_OVERDUE
-                else:
+        for dl in deadlines:
+            if dl.recurrence == ComplianceDeadline.RECURRENCE_ANNUAL:
+                if c_idx in [0, 1]:  # Apex & Kilimani filed 2026 Corporate Tax Return
+                    dl.last_completed_due_date = date(2026, 6, 30)
+                    dl.current_due_date = date(2027, 6, 30)
                     dl.status = ComplianceDeadline.STATUS_COMPLETED
-                    dl.completed_at = utcnow() - timedelta(days=2)
-            elif d_idx == 1: # NSSF - Upcoming in 5 days
-                dl.current_due_date = date.today() + timedelta(days=5)
-                dl.status = ComplianceDeadline.STATUS_PENDING
-            elif d_idx == 2: # SHIF - Upcoming in 5 days
-                dl.current_due_date = date.today() + timedelta(days=5)
-                dl.status = ComplianceDeadline.STATUS_PENDING
-            elif d_idx == 3: # VAT - Upcoming on 20th
-                dl.current_due_date = date.today() + timedelta(days=16)
+                    dl.completed_cycle_until = date(2026, 12, 31)
+                    dl.completed_at = utcnow() - timedelta(days=60)
+                else:  # Rift Valley & Savanna missed June deadline
+                    dl.current_due_date = date(2026, 6, 30)
+                    dl.status = ComplianceDeadline.STATUS_OVERDUE
+            elif "PAYE" in dl.title:
+                if c_idx in [0, 1]:  # Filed November PAYE
+                    dl.last_completed_due_date = date(2026, 11, 9)
+                    dl.current_due_date = date(2026, 12, 9)
+                    dl.status = ComplianceDeadline.STATUS_COMPLETED
+                    dl.completed_cycle_until = date(2026, 11, 30)
+                    dl.completed_at = utcnow() - timedelta(days=5)
+                else:
+                    dl.current_due_date = date(2026, 11, 9)
+                    dl.status = ComplianceDeadline.STATUS_OVERDUE
+            elif "NSSF" in dl.title or "SHIF" in dl.title:
+                if c_idx == 0:  # Apex filed
+                    dl.last_completed_due_date = date(2026, 11, 9)
+                    dl.current_due_date = date(2026, 12, 9)
+                    dl.status = ComplianceDeadline.STATUS_COMPLETED
+                    dl.completed_cycle_until = date(2026, 11, 30)
+                    dl.completed_at = utcnow() - timedelta(days=5)
+                else:  # Kilimani, Rift Valley, Savanna pending/overdue
+                    dl.current_due_date = date(2026, 11, 9)
+                    dl.status = ComplianceDeadline.STATUS_OVERDUE
+            elif "VAT" in dl.title:
+                dl.current_due_date = date(2026, 11, 20)
                 dl.status = ComplianceDeadline.STATUS_PENDING
 
         # Multi-period Assessments (Multi-Quarter progression)

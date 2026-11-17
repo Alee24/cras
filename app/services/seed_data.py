@@ -873,14 +873,35 @@ def seed_regulatory_content():
     db.session.commit()
 
 
-def seed_statutory_calendar_rules(organization_id: int):
-    """Generates standard Kenya statutory recurring compliance deadlines for an organization."""
-    # PAYE - 9th of every month
-    # NSSF - 9th of every month
-    # SHIF - 9th of every month
-    # VAT - 20th of every month
-    # Withholding Tax - 20th of every month
-    # Corporate Annual Return - 30th June
+def calculate_initial_statutory_due_date(rule_recurrence: str, day_of_month: int = 9, annual_month: int = 6, annual_day: int = 30, base_date: date = None) -> date:
+    """Calculates the upcoming statutory deadline dynamically from base_date (never hardcoded)."""
+    if not base_date:
+        base_date = date.today()
+
+    if rule_recurrence == "MONTHLY":
+        if base_date.day <= day_of_month:
+            return date(base_date.year, base_date.month, day_of_month)
+        else:
+            if base_date.month == 12:
+                return date(base_date.year + 1, 1, day_of_month)
+            else:
+                return date(base_date.year, base_date.month + 1, day_of_month)
+
+    elif rule_recurrence == "ANNUAL":
+        target_this_year = date(base_date.year, annual_month, annual_day)
+        if base_date <= target_this_year:
+            return target_this_year
+        else:
+            return date(base_date.year + 1, annual_month, annual_day)
+
+    return base_date
+
+
+def seed_statutory_calendar_rules(organization_id: int, base_date: date = None):
+    """Generates standard Kenya statutory recurring compliance deadlines dynamically for an organization."""
+    if not base_date:
+        base_date = date.today()
+
     tax_domain = RegulatoryDomain.query.filter_by(code="TAX").first()
     labour_domain = RegulatoryDomain.query.filter_by(code="LABOUR").first()
 
@@ -894,7 +915,7 @@ def seed_statutory_calendar_rules(organization_id: int):
             "statutory_rule": "9th of every month",
             "deadline_type": "STATUTORY_RECURRING",
             "recurrence": "MONTHLY",
-            "due_date": date(2026, 4, 9),
+            "due_date": calculate_initial_statutory_due_date("MONTHLY", day_of_month=9, base_date=base_date),
             "reminder_days": 5,
         },
         {
@@ -906,7 +927,7 @@ def seed_statutory_calendar_rules(organization_id: int):
             "statutory_rule": "9th of every month",
             "deadline_type": "STATUTORY_RECURRING",
             "recurrence": "MONTHLY",
-            "due_date": date(2026, 4, 9),
+            "due_date": calculate_initial_statutory_due_date("MONTHLY", day_of_month=9, base_date=base_date),
             "reminder_days": 5,
         },
         {
@@ -918,7 +939,7 @@ def seed_statutory_calendar_rules(organization_id: int):
             "statutory_rule": "9th of every month",
             "deadline_type": "STATUTORY_RECURRING",
             "recurrence": "MONTHLY",
-            "due_date": date(2026, 4, 9),
+            "due_date": calculate_initial_statutory_due_date("MONTHLY", day_of_month=9, base_date=base_date),
             "reminder_days": 5,
         },
         {
@@ -930,7 +951,7 @@ def seed_statutory_calendar_rules(organization_id: int):
             "statutory_rule": "20th of every month",
             "deadline_type": "STATUTORY_RECURRING",
             "recurrence": "MONTHLY",
-            "due_date": date(2026, 4, 20),
+            "due_date": calculate_initial_statutory_due_date("MONTHLY", day_of_month=20, base_date=base_date),
             "reminder_days": 5,
         },
         {
@@ -942,7 +963,7 @@ def seed_statutory_calendar_rules(organization_id: int):
             "statutory_rule": "30th June annually",
             "deadline_type": "STATUTORY_RECURRING",
             "recurrence": "ANNUAL",
-            "due_date": date(2026, 6, 30),
+            "due_date": calculate_initial_statutory_due_date("ANNUAL", annual_month=6, annual_day=30, base_date=base_date),
             "reminder_days": 30,
         },
     ]

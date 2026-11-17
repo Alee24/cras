@@ -74,6 +74,11 @@
               <span class="fw-semibold {% if dl.status == 'OVERDUE' %}text-danger{% elif dl.status == 'COMPLETED' %}text-success{% else %}text-dark{% endif %}">
                 {{ dl.current_due_date.strftime('%d %b %Y') }}
               </span>
+              {% if dl.status == 'COMPLETED' and dl.completed_cycle_until %}
+              <div class="small text-muted" style="font-size: 0.72rem;">
+                <i class="fa-solid fa-circle-check text-success me-1"></i>Filed through {{ dl.completed_cycle_until.strftime('%b %Y') if dl.recurrence == 'MONTHLY' else dl.completed_cycle_until.strftime('%Y') }}
+              </div>
+              {% endif %}
             </td>
             <td><span class="small text-muted">{{ dl.recurrence.title() }}</span></td>
             <td>{{ dl.status|status_badge }}</td>

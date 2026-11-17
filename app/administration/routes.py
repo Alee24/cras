@@ -4,7 +4,9 @@ from flask_login import login_required, current_user
 from app.models.base import db
 from app.models.auth import Role, User
 from app.models.organization import Organization
-from app.models.regulatory import RegulatoryDomain, RegulatoryCategory, RegulatoryRequirement
+from app.models.regulatory import RegulatoryDomain, RegulatoryCategory, RegulatoryRequirement, ComplianceQuestion
+from app.models.assessment import AssessmentResponse
+from app.models.compliance_management import ComplianceGap
 from app.models.scoring import ScoringPolicy, ScoringPolicyVersion
 from app.models.audit_and_notification import AuditLog, SystemSetting
 from app.services.audit_service import AuditService
@@ -65,9 +67,225 @@ def toggle_organization(org_id):
 @super_admin_required
 def regulatory_content():
     org = get_active_organization()
+    domain_id = request.args.get("domain_id", type=int)
+    category_id = request.args.get("category_id", type=int)
+    search_query = request.args.get("q", "").strip()
+
     domains = RegulatoryDomain.query.order_by(RegulatoryDomain.display_order).all()
-    requirements = RegulatoryRequirement.query.order_by(RegulatoryRequirement.domain_id, RegulatoryRequirement.code).all()
-    return render_template("administration/regulatory_content.html", org=org, domains=domains, requirements=requirements)
+    categories = RegulatoryCategory.query.order_by(RegulatoryCategory.domain_id, RegulatoryCategory.display_order).all()
+
+    query = RegulatoryRequirement.query
+    if domain_id:
+        query = query.filter_by(domain_id=domain_id)
+    if category_id:
+        query = query.filter_by(category_id=category_id)
+    if search_query:
+        query = query.filter(
+            db.or_(
+                RegulatoryRequirement.title.ilike(f"%{search_query}%"),
+                RegulatoryRequirement.code.ilike(f"%{search_query}%"),
+                RegulatoryRequirement.legal_reference.ilike(f"%{search_query}%"),
+                RegulatoryRequirement.plain_description.ilike(f"%{search_query}%"),
+            )
+        )
+
+    requirements = query.order_by(RegulatoryRequirement.domain_id, RegulatoryRequirement.code).all()
+
+    total_requirements = RegulatoryRequirement.query.count()
+    active_count = RegulatoryRequirement.query.filter_by(is_active=True).count()
+    verified_count = RegulatoryRequirement.query.filter_by(verification_status=RegulatoryRequirement.VERIFIED).count()
+    review_count = RegulatoryRequirement.query.filter_by(verification_status=RegulatoryRequirement.REQUIRES_LEGAL_REVIEW).count()
+
+    return render_template(
+        "administration/regulatory_content.html",
+        org=org,
+        domains=domains,
+        categories=categories,
+        requirements=requirements,
+        total_requirements=total_requirements,
+        active_count=active_count,
+        verified_count=verified_count,
+        review_count=review_count,
+        selected_domain_id=domain_id,
+        selected_category_id=category_id,
+        search_query=search_query,
+    )
+
+
+@admin_bp.route("/regulatory-content/new", methods=["POST"])
+@login_required
+@super_admin_required
+def create_requirement():
+    code = request.form.get("code", "").strip().upper()
+    title = request.form.get("title", "").strip()
+    domain_id = request.form.get("domain_id", type=int)
+    category_id = request.form.get("category_id", type=int)
+    plain_description = request.form.get("plain_description", "").strip()
+    legal_reference = request.form.get("legal_reference", "").strip()
+    applicability_rule = request.form.get("applicability_rule", "All registered SMEs").strip()
+    required_evidence_desc = request.form.get("required_evidence_desc", "").strip()
+    risk_weight = float(request.form.get("risk_weight", 1.0))
+    potential_consequence = request.form.get("potential_consequence", "").strip()
+    recommended_corrective_action = request.form.get("recommended_corrective_action", "").strip()
+    verification_status = request.form.get("verification_status", RegulatoryRequirement.VERIFIED)
+    question_text = request.form.get("question_text", "").strip()
+    question_help = request.form.get("question_help", "").strip()
+
+    if not code or not title or not domain_id or not category_id:
+        flash("Please provide Code, Title, Regulatory Domain, and Category.", "danger")
+        return redirect(url_for("administration.regulatory_content"))
+
+    existing = RegulatoryRequirement.query.filter_by(code=code).first()
+    if existing:
+        flash(f"A regulatory requirement with code '{code}' already exists.", "danger")
+        return redirect(url_for("administration.regulatory_content"))
+
+    req = RegulatoryRequirement(
+        domain_id=domain_id,
+        category_id=category_id,
+        code=code,
+        title=title,
+        plain_description=plain_description,
+        legal_reference=legal_reference,
+        applicability_rule=applicability_rule,
+        required_evidence_desc=required_evidence_desc,
+        risk_weight=risk_weight,
+        potential_consequence=potential_consequence,
+        recommended_corrective_action=recommended_corrective_action,
+        verification_status=verification_status,
+        is_active=True,
+    )
+    db.session.add(req)
+    db.session.flush()
+
+    if question_text:
+        q = ComplianceQuestion(
+            requirement_id=req.id,
+            question_text=question_text,
+            help_text=question_help,
+            display_order=1,
+        )
+        db.session.add(q)
+
+    db.session.commit()
+    AuditService.log("CREATE_REGULATORY_REQUIREMENT", "RegulatoryRequirement", req.id, {
+        "code": req.code, "title": req.title, "domain_id": domain_id, "risk_weight": risk_weight
+    })
+    flash(f"Regulatory requirement '{req.code} - {req.title}' created successfully.", "success")
+    return redirect(url_for("administration.regulatory_content"))
+
+
+@admin_bp.route("/regulatory-content/<int:req_id>/edit", methods=["POST"])
+@login_required
+@super_admin_required
+def edit_requirement(req_id):
+    req = RegulatoryRequirement.query.get_or_404(req_id)
+
+    code = request.form.get("code", "").strip().upper()
+    title = request.form.get("title", "").strip()
+    domain_id = request.form.get("domain_id", type=int)
+    category_id = request.form.get("category_id", type=int)
+    plain_description = request.form.get("plain_description", "").strip()
+    legal_reference = request.form.get("legal_reference", "").strip()
+    applicability_rule = request.form.get("applicability_rule", "").strip()
+    required_evidence_desc = request.form.get("required_evidence_desc", "").strip()
+    risk_weight = float(request.form.get("risk_weight", req.risk_weight))
+    potential_consequence = request.form.get("potential_consequence", "").strip()
+    recommended_corrective_action = request.form.get("recommended_corrective_action", "").strip()
+    verification_status = request.form.get("verification_status", req.verification_status)
+    is_active = request.form.get("is_active") == "1"
+
+    if code and code != req.code:
+        dup = RegulatoryRequirement.query.filter_by(code=code).first()
+        if dup and dup.id != req.id:
+            flash(f"Code '{code}' is already assigned to another requirement.", "danger")
+            return redirect(url_for("administration.regulatory_content"))
+        req.code = code
+
+    if title:
+        req.title = title
+    if domain_id:
+        req.domain_id = domain_id
+    if category_id:
+        req.category_id = category_id
+    req.plain_description = plain_description
+    req.legal_reference = legal_reference
+    req.applicability_rule = applicability_rule
+    req.required_evidence_desc = required_evidence_desc
+    req.risk_weight = risk_weight
+    req.potential_consequence = potential_consequence
+    req.recommended_corrective_action = recommended_corrective_action
+    req.verification_status = verification_status
+    req.is_active = is_active
+
+    question_text = request.form.get("question_text", "").strip()
+    question_help = request.form.get("question_help", "").strip()
+    question_id = request.form.get("question_id", type=int)
+
+    if question_id:
+        question = ComplianceQuestion.query.get(question_id)
+        if question and question.requirement_id == req.id:
+            if question_text:
+                question.question_text = question_text
+            question.help_text = question_help
+    elif question_text:
+        first_q = ComplianceQuestion.query.filter_by(requirement_id=req.id).first()
+        if first_q:
+            first_q.question_text = question_text
+            first_q.help_text = question_help
+        else:
+            new_q = ComplianceQuestion(
+                requirement_id=req.id,
+                question_text=question_text,
+                help_text=question_help,
+                display_order=1
+            )
+            db.session.add(new_q)
+
+    db.session.commit()
+    AuditService.log("UPDATE_REGULATORY_REQUIREMENT", "RegulatoryRequirement", req.id, {
+        "code": req.code, "title": req.title, "risk_weight": req.risk_weight, "is_active": req.is_active
+    })
+    flash(f"Regulatory requirement '{req.code}' updated successfully.", "success")
+    return redirect(url_for("administration.regulatory_content"))
+
+
+@admin_bp.route("/regulatory-content/<int:req_id>/toggle", methods=["POST"])
+@login_required
+@super_admin_required
+def toggle_requirement(req_id):
+    req = RegulatoryRequirement.query.get_or_404(req_id)
+    req.is_active = not req.is_active
+    db.session.commit()
+    AuditService.log("TOGGLE_REGULATORY_REQUIREMENT", "RegulatoryRequirement", req.id, {"is_active": req.is_active})
+    status_label = "activated" if req.is_active else "deactivated"
+    flash(f"Requirement '{req.code}' has been {status_label}.", "info")
+    return redirect(url_for("administration.regulatory_content"))
+
+
+@admin_bp.route("/regulatory-content/<int:req_id>/delete", methods=["POST"])
+@login_required
+@super_admin_required
+def delete_requirement(req_id):
+    req = RegulatoryRequirement.query.get_or_404(req_id)
+    has_responses = AssessmentResponse.query.filter_by(requirement_id=req.id).first() is not None
+    has_gaps = ComplianceGap.query.filter_by(requirement_id=req.id).first() is not None
+
+    if has_responses or has_gaps:
+        req.is_active = False
+        db.session.commit()
+        AuditService.log("DEACTIVATE_REGULATORY_REQUIREMENT", "RegulatoryRequirement", req.id, {
+            "reason": "Referenced in historical assessments/gaps; soft deactivated"
+        })
+        flash(f"Requirement '{req.code}' is referenced in assessment history; deactivated to maintain historical audit integrity.", "warning")
+    else:
+        req_code = req.code
+        db.session.delete(req)
+        db.session.commit()
+        AuditService.log("DELETE_REGULATORY_REQUIREMENT", "RegulatoryRequirement", req_id, {"code": req_code})
+        flash(f"Regulatory requirement '{req_code}' permanently deleted.", "success")
+
+    return redirect(url_for("administration.regulatory_content"))
 
 
 @admin_bp.route("/scoring-config", methods=["GET", "POST"])

@@ -115,12 +115,22 @@ def index():
         CorrectiveAction.status.in_([CorrectiveAction.STATUS_OPEN, CorrectiveAction.STATUS_ASSIGNED, CorrectiveAction.STATUS_IN_PROGRESS])
     ).count()
 
-    # Overdue Compliance Deadlines
+    # Refresh deadline cycle statuses dynamically
     today = date.today()
+    org_deadlines = ComplianceDeadline.query.filter_by(organization_id=org.id, is_active=True).all()
+    dl_status_changed = False
+    for dl in org_deadlines:
+        old_status = dl.status
+        dl.refresh_status_for_date(today)
+        if dl.status != old_status:
+            dl_status_changed = True
+    if dl_status_changed:
+        db.session.commit()
+
+    # Overdue Compliance Deadlines
     overdue_deadlines_count = ComplianceDeadline.query.filter(
         ComplianceDeadline.organization_id == org.id,
-        ComplianceDeadline.status != ComplianceDeadline.STATUS_COMPLETED,
-        ComplianceDeadline.current_due_date < today
+        ComplianceDeadline.status == ComplianceDeadline.STATUS_OVERDUE
     ).count()
 
     # Open Compliance Gaps

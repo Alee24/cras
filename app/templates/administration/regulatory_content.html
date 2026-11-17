@@ -3,70 +3,469 @@
 {% block title %}Regulatory Content Management - Super Admin - CRAS{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
   <div>
-    <h3 class="fw-bold mb-1 text-primary">Regulatory Content Management</h3>
+    <h3 class="fw-bold mb-1 text-primary"><i class="fa-solid fa-scale-balanced me-2"></i>Regulatory Content Management</h3>
     <p class="text-muted small mb-0">Maintain statutory compliance checklists, risk weights, legal citations, and question banks without codebase edits.</p>
   </div>
   <div class="d-flex align-items-center gap-2">
+    <button type="button" class="btn btn-sm btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#newRequirementModal">
+      <i class="fa-solid fa-plus me-1"></i>Add Statutory Requirement
+    </button>
     <form method="POST" action="{{ url_for('administration.populate_demo_data') }}" class="d-inline" onsubmit="return confirm('Populate and refresh all 43 statutory requirements and live demonstration data for all 4 Kenyan accounts?');">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
       <input type="hidden" name="next" value="{{ request.url }}"/>
-      <button type="submit" class="btn btn-sm btn-success fw-semibold shadow-sm">
-        <i class="fa-solid fa-cloud-arrow-down me-1"></i>Load All Regulatory & Demo Data
+      <button type="submit" class="btn btn-sm btn-outline-success shadow-sm" title="Synchronize default statutory catalog">
+        <i class="fa-solid fa-cloud-arrow-down me-1"></i>Reset Default Catalog
       </button>
     </form>
     <a href="{{ url_for('administration.index') }}" class="btn btn-sm btn-outline-secondary">
-      <i class="fa-solid fa-arrow-left me-1"></i>Back to Admin Console
+      <i class="fa-solid fa-arrow-left me-1"></i>Admin Console
     </a>
   </div>
 </div>
 
+<!-- Executive Metric Badges -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-lg-3">
+    <div class="card p-3 shadow-sm border-0 border-start border-primary border-4">
+      <div class="text-muted small text-uppercase fw-semibold">Total Catalog Requirements</div>
+      <div class="fs-4 fw-bold text-primary">{{ total_requirements }}</div>
+      <div class="text-muted small mt-1">Across 3 statutory domains</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="card p-3 shadow-sm border-0 border-start border-success border-4">
+      <div class="text-muted small text-uppercase fw-semibold">Active Obligations</div>
+      <div class="fs-4 fw-bold text-success">{{ active_count }}</div>
+      <div class="text-muted small mt-1">Evaluated in assessments</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="card p-3 shadow-sm border-0 border-start border-info border-4">
+      <div class="text-muted small text-uppercase fw-semibold">Verified by Counsel</div>
+      <div class="fs-4 fw-bold text-info">{{ verified_count }}</div>
+      <div class="text-muted small mt-1">Legally cited & validated</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="card p-3 shadow-sm border-0 border-start border-warning border-4">
+      <div class="text-muted small text-uppercase fw-semibold">Pending Legal Review</div>
+      <div class="fs-4 fw-bold text-warning">{{ review_count }}</div>
+      <div class="text-muted small mt-1">Flagged for advisory check</div>
+    </div>
+  </div>
+</div>
+
+<!-- Filter and Search Toolbar -->
 <div class="card shadow-sm mb-4">
-  <div class="card-header bg-white py-3">
-    <h5 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-scale-balanced me-2"></i>Statutory Regulatory Catalog ({{ requirements|length }} Obligations)</h5>
+  <div class="card-body py-3">
+    <form method="GET" action="{{ url_for('administration.regulatory_content') }}" class="row g-2 align-items-center">
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold mb-1">Filter by Domain</label>
+        <select name="domain_id" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">-- All Domains ({{ domains|length }}) --</option>
+          {% for d in domains %}
+          <option value="{{ d.id }}" {% if selected_domain_id == d.id %}selected{% endif %}>{{ d.title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold mb-1">Filter by Category</label>
+        <select name="category_id" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">-- All Categories ({{ categories|length }}) --</option>
+          {% for c in categories %}
+          <option value="{{ c.id }}" {% if selected_category_id == c.id %}selected{% endif %}>{{ c.domain.code }} - {{ c.title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small fw-semibold mb-1">Search Keywords</label>
+        <div class="input-group input-group-sm">
+          <input type="text" name="q" class="form-control" placeholder="Search title, citation, code, description..." value="{{ search_query }}">
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-magnifying-glass"></i></button>
+        </div>
+      </div>
+      <div class="col-md-2 text-md-end pt-3">
+        {% if selected_domain_id or selected_category_id or search_query %}
+        <a href="{{ url_for('administration.regulatory_content') }}" class="btn btn-sm btn-outline-secondary w-100">
+          <i class="fa-solid fa-rotate-left me-1"></i>Reset Filter
+        </a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Requirements Catalog Table -->
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+    <h5 class="fw-bold mb-0 text-primary">
+      <i class="fa-solid fa-list-check me-2"></i>Statutory Regulatory Obligations ({{ requirements|length }} Found)
+    </h5>
   </div>
   <div class="card-body p-0">
+    {% if requirements %}
     <div class="table-responsive">
-      <table class="table table-cras mb-0">
+      <table class="table table-cras align-middle mb-0">
         <thead>
           <tr>
-            <th>Code</th>
-            <th>Domain</th>
-            <th>Obligation Title</th>
-            <th>Legal Reference</th>
-            <th>Risk Weight</th>
-            <th>Status</th>
-            <th class="text-end">Action</th>
+            <th style="width: 110px;">Code</th>
+            <th style="width: 140px;">Domain</th>
+            <th>Obligation Title & Description</th>
+            <th style="width: 190px;">Legal Reference</th>
+            <th style="width: 90px;" class="text-center">Weight</th>
+            <th style="width: 100px;" class="text-center">Status</th>
+            <th style="width: 180px;" class="text-end">Actions</th>
           </tr>
         </thead>
         <tbody>
           {% for req in requirements %}
-          <tr>
-            <td><span class="badge bg-light text-dark border font-monospace">{{ req.code }}</span></td>
-            <td><span class="small fw-semibold">{{ req.domain.title }}</span></td>
+          <tr class="{% if not req.is_active %}opacity-50 bg-light{% endif %}">
             <td>
-              <div class="fw-bold">{{ req.title }}</div>
-              <div class="text-muted small text-truncate" style="max-width: 320px;">{{ req.plain_description }}</div>
-            </td>
-            <td><span class="small font-monospace text-primary">{{ req.legal_reference }}</span></td>
-            <td>
-              <span class="badge bg-light text-dark border">{{ req.risk_weight }}x</span>
+              <span class="badge bg-light text-dark border font-monospace">{{ req.code }}</span>
+              {% if not req.is_active %}
+              <div class="badge bg-secondary-subtle text-secondary small mt-1" style="font-size: 0.68rem;">Inactive</div>
+              {% endif %}
             </td>
             <td>
-              <span class="badge bg-success-subtle text-success">{{ req.verification_status }}</span>
+              <span class="badge bg-primary-subtle text-primary border border-primary-subtle">{{ req.domain.code }}</span>
+              <div class="small text-muted text-truncate" style="max-width: 140px;" title="{{ req.category.title }}">{{ req.category.title }}</div>
+            </td>
+            <td>
+              <div class="fw-bold text-dark">{{ req.title }}</div>
+              <div class="text-muted small text-truncate" style="max-width: 380px;" title="{{ req.plain_description }}">{{ req.plain_description }}</div>
+              {% if req.questions and req.questions|length > 0 %}
+              <div class="small text-primary mt-1" style="font-size: 0.72rem;">
+                <i class="fa-regular fa-circle-question me-1"></i>Q: {{ req.questions[0].question_text|truncate(80) }}
+              </div>
+              {% endif %}
+            </td>
+            <td>
+              <span class="small font-monospace text-primary fw-semibold">{{ req.legal_reference }}</span>
+              {% if req.applicability_rule %}
+              <div class="text-muted small" style="font-size: 0.72rem;">{{ req.applicability_rule }}</div>
+              {% endif %}
+            </td>
+            <td class="text-center">
+              <span class="badge {% if req.risk_weight >= 2.5 %}bg-danger-subtle text-danger border border-danger-subtle{% elif req.risk_weight >= 1.5 %}bg-warning-subtle text-warning border border-warning-subtle{% else %}bg-light text-dark border{% endif %}">
+                {{ "%.1f"|format(req.risk_weight) }}x
+              </span>
+            </td>
+            <td class="text-center">
+              {% if req.verification_status == 'VERIFIED' %}
+              <span class="badge bg-success-subtle text-success border border-success-subtle"><i class="fa-solid fa-check me-1"></i>Verified</span>
+              {% else %}
+              <span class="badge bg-warning-subtle text-dark border border-warning-subtle"><i class="fa-solid fa-clock me-1"></i>Review</span>
+              {% endif %}
             </td>
             <td class="text-end">
-              <a href="{{ url_for('regulatory.requirement_detail', req_id=req.id) }}" class="btn btn-sm btn-outline-primary">
-                Inspect
-              </a>
+              <div class="btn-group btn-group-sm" role="group">
+                <!-- Edit Button (Opens Modal with Data Attributes) -->
+                <button type="button" class="btn btn-outline-primary edit-req-btn" 
+                        title="Edit statutory obligation & questions"
+                        data-id="{{ req.id }}"
+                        data-code="{{ req.code }}"
+                        data-title="{{ req.title }}"
+                        data-domain-id="{{ req.domain_id }}"
+                        data-category-id="{{ req.category_id }}"
+                        data-plain-description="{{ req.plain_description }}"
+                        data-legal-reference="{{ req.legal_reference }}"
+                        data-applicability-rule="{{ req.applicability_rule or '' }}"
+                        data-required-evidence-desc="{{ req.required_evidence_desc or '' }}"
+                        data-risk-weight="{{ req.risk_weight }}"
+                        data-potential-consequence="{{ req.potential_consequence or '' }}"
+                        data-recommended-corrective-action="{{ req.recommended_corrective_action or '' }}"
+                        data-verification-status="{{ req.verification_status }}"
+                        data-is-active="{{ '1' if req.is_active else '0' }}"
+                        data-question-id="{{ req.questions[0].id if req.questions else '' }}"
+                        data-question-text="{{ req.questions[0].question_text if req.questions else '' }}"
+                        data-question-help="{{ req.questions[0].help_text if req.questions else '' }}"
+                        data-bs-toggle="modal" data-bs-target="#editRequirementModal">
+                  <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+
+                <!-- Toggle Active Form -->
+                <form method="POST" action="{{ url_for('administration.toggle_requirement', req_id=req.id) }}" class="d-inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                  <button type="submit" class="btn {% if req.is_active %}btn-outline-warning text-dark{% else %}btn-outline-success{% endif %}" title="{% if req.is_active %}Deactivate obligation{% else %}Reactivate obligation{% endif %}">
+                    <i class="fa-solid {% if req.is_active %}fa-pause{% else %}fa-play{% endif %}"></i>
+                  </button>
+                </form>
+
+                <!-- Inspect View Link -->
+                <a href="{{ url_for('regulatory.requirement_detail', req_id=req.id) }}" class="btn btn-outline-secondary" title="View details" target="_blank">
+                  <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                </a>
+
+                <!-- Delete Form -->
+                <form method="POST" action="{{ url_for('administration.delete_requirement', req_id=req.id) }}" class="d-inline" onsubmit="return confirm('Are you sure you want to remove obligation {{ req.code }}? If it has historical assessment records, it will be safely deactivated.');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                  <button type="submit" class="btn btn-outline-danger" title="Delete or soft-archive">
+                    <i class="fa-solid fa-trash-can"></i>
+                  </button>
+                </form>
+              </div>
             </td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+      <i class="fa-solid fa-scale-balanced fa-3x mb-3 text-secondary opacity-50"></i>
+      <h6>No statutory requirements found matching your criteria.</h6>
+      <p class="small mb-0">Try clearing filters or click "Add Statutory Requirement" above.</p>
+    </div>
+    {% endif %}
   </div>
 </div>
-{% endblock %}
 
+<!-- Modal: Add New Requirement -->
+<div class="modal fade" id="newRequirementModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content shadow">
+      <form method="POST" action="{{ url_for('administration.create_requirement') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <div class="modal-header bg-light">
+          <h5 class="modal-title fw-bold text-primary">
+            <i class="fa-solid fa-plus-circle me-2"></i>Add New Statutory Compliance Requirement
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4">
+          <div class="row g-3">
+            <div class="col-md-3">
+              <label class="form-label small fw-semibold">Requirement Code *</label>
+              <input type="text" name="code" class="form-control form-control-sm font-monospace text-uppercase" placeholder="e.g. TAX-CIT-02" required>
+            </div>
+            <div class="col-md-5">
+              <label class="form-label small fw-semibold">Regulatory Domain *</label>
+              <select name="domain_id" id="new_req_domain" class="form-select form-select-sm" required>
+                <option value="">-- Select Domain --</option>
+                {% for d in domains %}
+                <option value="{{ d.id }}">{{ d.code }} - {{ d.title }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold">Category *</label>
+              <select name="category_id" id="new_req_category" class="form-select form-select-sm" required>
+                <option value="">-- Select Category --</option>
+                {% for c in categories %}
+                <option value="{{ c.id }}" data-domain-id="{{ c.domain_id }}">{{ c.domain.code }} &raquo; {{ c.title }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-8">
+              <label class="form-label small fw-semibold">Obligation Title *</label>
+              <input type="text" name="title" class="form-control form-control-sm" placeholder="e.g. Electronic Tax Invoice Transmission (eTIMS)" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold">Risk Weight (1.0 to 3.0) *</label>
+              <input type="number" name="risk_weight" class="form-control form-control-sm" value="1.0" min="1.0" max="3.0" step="0.5" required>
+            </div>
+
+            <div class="col-md-7">
+              <label class="form-label small fw-semibold">Statutory Legal Reference / Section *</label>
+              <input type="text" name="legal_reference" class="form-control form-control-sm" placeholder="e.g. Tax Procedures Act 2015, Section 23A" required>
+            </div>
+            <div class="col-md-5">
+              <label class="form-label small fw-semibold">Verification Status</label>
+              <select name="verification_status" class="form-select form-select-sm">
+                <option value="VERIFIED">VERIFIED (Legally Citated)</option>
+                <option value="REQUIRES_LEGAL_REVIEW">REQUIRES_LEGAL_REVIEW</option>
+              </select>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label small fw-semibold">Plain English Description *</label>
+              <textarea name="plain_description" class="form-control form-control-sm" rows="2" placeholder="Clear, non-technical explanation for SME business operators..." required></textarea>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Applicability Scope</label>
+              <input type="text" name="applicability_rule" class="form-control form-control-sm" value="All registered businesses and corporate entities in Kenya">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Required Evidence Documents</label>
+              <input type="text" name="required_evidence_desc" class="form-control form-control-sm" placeholder="e.g. KRA eTIMS onboarding acknowledgment and sample fiscal receipts">
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Potential Statutory Penalties & Fines</label>
+              <textarea name="potential_consequence" class="form-control form-control-sm" rows="2" placeholder="e.g. Fine equal to double the tax amount or imprisonment up to 3 years"></textarea>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Recommended Corrective Action Plan</label>
+              <textarea name="recommended_corrective_action" class="form-control form-control-sm" rows="2" placeholder="e.g. Download and configure the KRA eTIMS desktop/online integration module"></textarea>
+            </div>
+
+            <div class="col-12 border-top pt-3">
+              <h6 class="fw-bold text-primary small mb-2"><i class="fa-regular fa-circle-question me-1"></i>Primary Compliance Assessment Question</h6>
+              <div class="mb-2">
+                <label class="form-label small fw-semibold">Question Text</label>
+                <input type="text" name="question_text" class="form-control form-control-sm" placeholder="e.g. Does your organization generate and transmit electronic tax invoices via eTIMS for all commercial transactions?">
+              </div>
+              <div>
+                <label class="form-label small fw-semibold">Question Guidance / Help Text</label>
+                <input type="text" name="question_help" class="form-control form-control-sm" placeholder="Guidance notes displayed to compliance evaluators during assessment">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer bg-light">
+          <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-primary"><i class="fa-solid fa-save me-1"></i>Save Requirement</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Edit Requirement -->
+<div class="modal fade" id="editRequirementModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content shadow">
+      <form id="editRequirementForm" method="POST" action="">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <input type="hidden" name="question_id" id="edit_question_id" value=""/>
+        <div class="modal-header bg-light">
+          <h5 class="modal-title fw-bold text-primary">
+            <i class="fa-solid fa-pen-to-square me-2"></i>Edit Statutory Compliance Requirement
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4">
+          <div class="row g-3">
+            <div class="col-md-3">
+              <label class="form-label small fw-semibold">Requirement Code *</label>
+              <input type="text" name="code" id="edit_code" class="form-control form-control-sm font-monospace text-uppercase" required>
+            </div>
+            <div class="col-md-5">
+              <label class="form-label small fw-semibold">Regulatory Domain *</label>
+              <select name="domain_id" id="edit_domain_id" class="form-select form-select-sm" required>
+                {% for d in domains %}
+                <option value="{{ d.id }}">{{ d.code }} - {{ d.title }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold">Category *</label>
+              <select name="category_id" id="edit_category_id" class="form-select form-select-sm" required>
+                {% for c in categories %}
+                <option value="{{ c.id }}">{{ c.domain.code }} &raquo; {{ c.title }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-8">
+              <label class="form-label small fw-semibold">Obligation Title *</label>
+              <input type="text" name="title" id="edit_title" class="form-control form-control-sm" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold">Risk Weight (1.0 to 3.0) *</label>
+              <input type="number" name="risk_weight" id="edit_risk_weight" class="form-control form-control-sm" min="1.0" max="3.0" step="0.5" required>
+            </div>
+
+            <div class="col-md-7">
+              <label class="form-label small fw-semibold">Statutory Legal Reference / Section *</label>
+              <input type="text" name="legal_reference" id="edit_legal_reference" class="form-control form-control-sm" required>
+            </div>
+            <div class="col-md-5">
+              <label class="form-label small fw-semibold">Verification Status</label>
+              <select name="verification_status" id="edit_verification_status" class="form-select form-select-sm">
+                <option value="VERIFIED">VERIFIED (Legally Citated)</option>
+                <option value="REQUIRES_LEGAL_REVIEW">REQUIRES_LEGAL_REVIEW</option>
+              </select>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label small fw-semibold">Plain English Description *</label>
+              <textarea name="plain_description" id="edit_plain_description" class="form-control form-control-sm" rows="2" required></textarea>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Applicability Scope</label>
+              <input type="text" name="applicability_rule" id="edit_applicability_rule" class="form-control form-control-sm">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Required Evidence Documents</label>
+              <input type="text" name="required_evidence_desc" id="edit_required_evidence_desc" class="form-control form-control-sm">
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Potential Statutory Penalties & Fines</label>
+              <textarea name="potential_consequence" id="edit_potential_consequence" class="form-control form-control-sm" rows="2"></textarea>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Recommended Corrective Action Plan</label>
+              <textarea name="recommended_corrective_action" id="edit_recommended_corrective_action" class="form-control form-control-sm" rows="2"></textarea>
+            </div>
+
+            <div class="col-md-6">
+              <div class="form-check form-switch mt-2">
+                <input class="form-check-input" type="checkbox" name="is_active" id="edit_is_active" value="1">
+                <label class="form-check-label small fw-semibold" for="edit_is_active">Requirement Active (Evaluated in Assessments)</label>
+              </div>
+            </div>
+
+            <div class="col-12 border-top pt-3">
+              <h6 class="fw-bold text-primary small mb-2"><i class="fa-regular fa-circle-question me-1"></i>Primary Compliance Assessment Question</h6>
+              <div class="mb-2">
+                <label class="form-label small fw-semibold">Question Text</label>
+                <input type="text" name="question_text" id="edit_question_text" class="form-control form-control-sm">
+              </div>
+              <div>
+                <label class="form-label small fw-semibold">Question Guidance / Help Text</label>
+                <input type="text" name="question_help" id="edit_question_help" class="form-control form-control-sm">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer bg-light">
+          <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-primary"><i class="fa-solid fa-save me-1"></i>Update Requirement</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  // Populate Edit Requirement Modal dynamically
+  const editButtons = document.querySelectorAll(".edit-req-btn");
+  const editForm = document.getElementById("editRequirementForm");
+
+  editButtons.forEach(btn => {
+    btn.addEventListener("click", function() {
+      const id = this.getAttribute("data-id");
+      editForm.action = "{{ url_for('administration.regulatory_content') }}/" + id + "/edit";
+
+      document.getElementById("edit_code").value = this.getAttribute("data-code") || "";
+      document.getElementById("edit_title").value = this.getAttribute("data-title") || "";
+      document.getElementById("edit_domain_id").value = this.getAttribute("data-domain-id") || "";
+      document.getElementById("edit_category_id").value = this.getAttribute("data-category-id") || "";
+      document.getElementById("edit_plain_description").value = this.getAttribute("data-plain-description") || "";
+      document.getElementById("edit_legal_reference").value = this.getAttribute("data-legal-reference") || "";
+      document.getElementById("edit_applicability_rule").value = this.getAttribute("data-applicability-rule") || "";
+      document.getElementById("edit_required_evidence_desc").value = this.getAttribute("data-required-evidence-desc") || "";
+      document.getElementById("edit_risk_weight").value = this.getAttribute("data-risk-weight") || "1.0";
+      document.getElementById("edit_potential_consequence").value = this.getAttribute("data-potential-consequence") || "";
+      document.getElementById("edit_recommended_corrective_action").value = this.getAttribute("data-recommended-corrective-action") || "";
+      document.getElementById("edit_verification_status").value = this.getAttribute("data-verification-status") || "VERIFIED";
+      
+      const isActive = this.getAttribute("data-is-active") === "1";
+      document.getElementById("edit_is_active").checked = isActive;
+
+      document.getElementById("edit_question_id").value = this.getAttribute("data-question-id") || "";
+      document.getElementById("edit_question_text").value = this.getAttribute("data-question-text") || "";
+      document.getElementById("edit_question_help").value = this.getAttribute("data-question-help") || "";
+    });
+  });
+});
+</script>
+{% endblock %}

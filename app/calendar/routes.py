@@ -22,15 +22,15 @@ def index():
     today = date.today()
     status_filter = request.args.get("status")
 
-    # Update overdue status dynamically
-    pending_deadlines = ComplianceDeadline.query.filter(
-        ComplianceDeadline.organization_id == org.id,
-        ComplianceDeadline.status == ComplianceDeadline.STATUS_PENDING,
-        ComplianceDeadline.current_due_date < today
-    ).all()
-    if pending_deadlines:
-        for d in pending_deadlines:
-            d.status = ComplianceDeadline.STATUS_OVERDUE
+    # Refresh deadline cycle statuses dynamically
+    org_deadlines = ComplianceDeadline.query.filter_by(organization_id=org.id, is_active=True).all()
+    status_changed = False
+    for d in org_deadlines:
+        old_status = d.status
+        d.refresh_status_for_date(today)
+        if d.status != old_status:
+            status_changed = True
+    if status_changed:
         db.session.commit()
 
     query = ComplianceDeadline.query.filter_by(organization_id=org.id, is_active=True)
@@ -116,14 +116,34 @@ def toggle_complete(deadline_id):
     deadline = ComplianceDeadline.query.filter_by(id=deadline_id, organization_id=org.id).first_or_404()
 
     if deadline.status == ComplianceDeadline.STATUS_COMPLETED:
-        deadline.status = ComplianceDeadline.STATUS_PENDING
-        deadline.completed_at = None
-        flash(f"Deadline '{deadline.title}' marked as pending.", "info")
+        deadline.reopen_previous_cycle()
+        db.session.commit()
+        AuditService.log("REOPEN_DEADLINE", "ComplianceDeadline", deadline.id, {
+            "title": deadline.title,
+            "restored_due_date": str(deadline.current_due_date),
+            "status": deadline.status
+        }, organization_id=org.id)
+        flash(f"Deadline '{deadline.title}' reopened for {deadline.current_due_date.strftime('%d %b %Y')}.", "info")
     else:
-        deadline.status = ComplianceDeadline.STATUS_COMPLETED
-        deadline.completed_at = utcnow()
-        flash(f"Deadline '{deadline.title}' marked as completed!", "success")
-
-    db.session.commit()
-    AuditService.log("TOGGLE_DEADLINE", "ComplianceDeadline", deadline.id, {"status": deadline.status}, organization_id=org.id)
+        prev_date = deadline.current_due_date
+        deadline.advance_to_next_cycle()
+        db.session.commit()
+        AuditService.log("COMPLETE_DEADLINE", "ComplianceDeadline", deadline.id, {
+            "title": deadline.title,
+            "completed_cycle_due_date": str(prev_date),
+            "next_due_date": str(deadline.current_due_date),
+            "status": deadline.status
+        }, organization_id=org.id)
+        if deadline.recurrence == ComplianceDeadline.RECURRENCE_ANNUAL:
+            flash(
+                f"Statutory filing '{deadline.title}' completed for {prev_date.year}! Status remains COMPLETED for {prev_date.year}. Next filing deadline updated to {deadline.current_due_date.strftime('%d %b %Y')}.",
+                "success"
+            )
+        elif deadline.recurrence == ComplianceDeadline.RECURRENCE_MONTHLY:
+            flash(
+                f"Statutory return '{deadline.title}' marked as filed! Status remains COMPLETED for {prev_date.strftime('%B %Y')}. Next filing deadline updated to {deadline.current_due_date.strftime('%d %b %Y')}.",
+                "success"
+            )
+        else:
+            flash(f"Compliance obligation '{deadline.title}' marked as completed!", "success")
     return redirect(url_for("calendar.index"))
