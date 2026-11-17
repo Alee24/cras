@@ -187,3 +187,30 @@ def verify_evidence(evidence_id):
 
     return redirect(request.referrer or url_for("evidence.index"))
 
+
+@evidence_bp.route("/download-archive")
+@login_required
+def download_archive():
+    """Serves the complete watermarked statutory evidence vault as a downloadable ZIP archive."""
+    org = get_active_organization()
+    zip_path = Path(current_app.root_path).parent / "downloads" / "CRAS_Statutory_Evidence_Vault.zip"
+    if not zip_path.exists():
+        from app.services.evidence_vault_builder import build_complete_statutory_evidence_vault
+        base_dir = Path(current_app.root_path).parent / "downloads" / "CRAS_Statutory_Evidence_Vault"
+        build_complete_statutory_evidence_vault(base_dir, zip_path)
+
+    AuditService.log(
+        "DOWNLOAD_EVIDENCE_ARCHIVE",
+        "AssessmentEvidence",
+        None,
+        {"archive": "CRAS_Statutory_Evidence_Vault.zip", "size": zip_path.stat().st_size},
+        organization_id=org.id if org else None,
+    )
+
+    return send_file(
+        str(zip_path),
+        as_attachment=True,
+        download_name="CRAS_Statutory_Evidence_Vault.zip",
+        mimetype="application/zip",
+    )
+

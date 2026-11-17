@@ -18,10 +18,11 @@ from reportlab.pdfgen import canvas
 
 
 class EvidenceCanvas(canvas.Canvas):
-    """Adds security border and official running footer to generated statutory documents."""
-    def __init__(self, *args, **kwargs):
+    """Adds security border, official running footer, and bold diagonal watermark to statutory documents."""
+    def __init__(self, *args, watermark_text=None, **kwargs):
         super().__init__(*args, **kwargs)
         self._saved_page_states = []
+        self.watermark_text = watermark_text or "STATUTORY COMPLIANCE EVIDENCE"
 
     def showPage(self):
         self._saved_page_states.append(dict(self.__dict__))
@@ -31,9 +32,25 @@ class EvidenceCanvas(canvas.Canvas):
         num_pages = len(self._saved_page_states)
         for state in self._saved_page_states:
             self.__dict__.update(state)
+            self.draw_watermark()
             self.draw_page_decorations(num_pages)
             super().showPage()
         super().save()
+
+    def draw_watermark(self):
+        self.saveState()
+        # Bold diagonal translucent watermark
+        self.setFont("Helvetica-Bold", 32)
+        self.setFillColor(colors.HexColor("#CBD5E1"), alpha=0.35)
+        self.translate(297, 421)
+        self.rotate(45)
+        self.drawCentredString(0, 0, self.watermark_text)
+
+        # Secondary watermark subtitle
+        self.setFont("Helvetica-Bold", 13)
+        self.setFillColor(colors.HexColor("#94A3B8"), alpha=0.30)
+        self.drawCentredString(0, -25, "CRAS AUDIT VERIFIED • OFFICIAL STATUTORY COPY")
+        self.restoreState()
 
     def draw_page_decorations(self, total_pages):
         self.saveState()
